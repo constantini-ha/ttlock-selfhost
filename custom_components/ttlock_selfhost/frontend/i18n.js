@@ -132,8 +132,8 @@ const STRINGS = {
     read_none: "The lock did not answer by Bluetooth or the gateway.",
     saved: "Saved.",
     to_dashboard: "Add to dashboard",
-    sent_to_dashboard: "The doors are on your dashboard.",
-    already_on_dashboard: "Already on your dashboard; nothing was added.",
+    sent_to_dashboard: "“{name}” is on your dashboard.",
+    already_on_dashboard: "“{name}” is already on your dashboard; nothing was added.",
     dashboard_auto: "Your dashboard is automatic. Take control of it first, then add the card.",
     gw_intro:
       "The gateway only talks to the TTLock cloud, so this route uses TTLock's official API. " +
@@ -292,8 +292,8 @@ const STRINGS = {
     read_none: "A fechadura não respondeu por Bluetooth nem pelo gateway.",
     saved: "Salvo.",
     to_dashboard: "Adicionar ao painel",
-    sent_to_dashboard: "As portas foram para o seu painel.",
-    already_on_dashboard: "Já está no seu painel; nada foi adicionado.",
+    sent_to_dashboard: "“{name}” foi para o seu painel.",
+    already_on_dashboard: "“{name}” já está no seu painel; nada foi adicionado.",
     dashboard_auto: "Seu painel é automático. Assuma o controle dele primeiro e depois adicione o card.",
     gw_intro:
       "O gateway só conversa com a nuvem da TTLock, então este caminho usa a API oficial da TTLock. " +
@@ -452,8 +452,8 @@ const STRINGS = {
     read_none: "La cerradura no respondió por Bluetooth ni por el gateway.",
     saved: "Guardado.",
     to_dashboard: "Añadir al panel",
-    sent_to_dashboard: "Las puertas están en tu panel.",
-    already_on_dashboard: "Ya está en tu panel; no se añadió nada.",
+    sent_to_dashboard: "“{name}” está en tu panel.",
+    already_on_dashboard: "“{name}” ya está en tu panel; no se añadió nada.",
     dashboard_auto: "Tu panel es automático. Toma el control primero y luego añade la tarjeta.",
     gw_intro:
       "El gateway solo habla con la nube de TTLock, así que este camino usa la API oficial de TTLock. " +

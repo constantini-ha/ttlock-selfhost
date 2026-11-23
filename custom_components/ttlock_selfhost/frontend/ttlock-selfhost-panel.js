@@ -287,7 +287,7 @@ class TtlockSelfhostPanel extends HTMLElement {
     return message === "no_gateway" ? this._t("err_no_gateway") : this._t("failed", { err: message });
   }
 
-  // Adds the doors card once: a card that already shows the lock is left alone.
+  // Adds one lock to the dashboard, once: a card that already shows it is left alone.
   async _toDashboard(lock) {
     let config;
     try {
@@ -299,22 +299,23 @@ class TtlockSelfhostPanel extends HTMLElement {
       this._say(this._t("dashboard_auto"));
       return;
     }
+    const entity = lock.entities.lock;
     const cards = [...cardsIn(config.views)].filter((card) => card.type === DOORS_CARD);
-    const entity = lock && lock.entities.lock;
-    const fixed = cards.find((card) => Array.isArray(card.entities));
-    if (cards.some((card) => !Array.isArray(card.entities) || !entity || card.entities.includes(entity))) {
-      this._say(this._t("already_on_dashboard"));
+    if (cards.some((card) => !Array.isArray(card.entities) || card.entities.includes(entity))) {
+      this._say(this._t("already_on_dashboard", { name: lock.name }));
       return;
     }
-    if (fixed) fixed.entities.push(entity);
+    // Doors stay side by side: a card with a fixed list takes the new lock.
+    if (cards.length) cards[0].entities.push(entity);
     else {
+      const card = { type: DOORS_CARD, entities: [entity] };
       const view = config.views[0];
-      if (view.sections) view.sections.push({ type: "grid", cards: [{ type: DOORS_CARD }] });
-      else (view.cards ||= []).push({ type: DOORS_CARD });
+      if (view.sections) view.sections.push({ type: "grid", cards: [card] });
+      else (view.cards ||= []).push(card);
     }
     try {
       await this._hass.callWS({ type: "lovelace/config/save", url_path: null, config });
-      this._say(this._t("sent_to_dashboard"));
+      this._say(this._t("sent_to_dashboard", { name: lock.name }));
     } catch (err) {
       this._say(this._error(err));
     }
@@ -477,7 +478,6 @@ class TtlockSelfhostPanel extends HTMLElement {
         )
       )
       ),
-      h("button", { class: "ghost", onclick: () => this._toDashboard(null) }, this._t("to_dashboard")),
     ];
   }
 
@@ -555,6 +555,7 @@ class TtlockSelfhostPanel extends HTMLElement {
           )
         )
       ),
+      h("button", { class: "ghost", onclick: () => this._toDashboard(lock) }, this._t("to_dashboard")),
     ];
   }
 
@@ -1148,7 +1149,6 @@ class TtlockSelfhostPanel extends HTMLElement {
         },
         this._t("read_now")
       ),
-      h("button", { class: "ghost", onclick: () => this._toDashboard(lock) }, this._t("to_dashboard")),
     ];
   }
 }
