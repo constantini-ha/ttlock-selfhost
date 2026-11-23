@@ -3,6 +3,7 @@
 import { t } from "./i18n.js";
 
 const WS = "ttlock_selfhost/";
+const DOORS_CARD = "custom:ttlock-selfhost-doors-card";
 const HOLD_MS = 700;
 const POLL_MS = 15000;
 const FLASH_MS = 5000;
@@ -55,6 +56,14 @@ const localInput = (ms) => {
 };
 const masked = (code) =>
   code && code.length >= 4 ? `${code[0]}•••${code.slice(-2)}` : "•••";
+
+function* cardsIn(node) {
+  if (Array.isArray(node)) for (const item of node) yield* cardsIn(item);
+  else if (node && typeof node === "object") {
+    if (typeof node.type === "string") yield node;
+    for (const value of Object.values(node)) yield* cardsIn(value);
+  }
+}
 
 const STYLE = `
   :host {
@@ -162,6 +171,10 @@ const STYLE = `
     padding: 14px; font-size: 16px; font-weight: 500; }
   .primary:disabled { opacity: 0.5; cursor: default; }
   .primary:focus-visible { outline: 3px solid var(--tt-blue); outline-offset: 3px; }
+  .ghost { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
+    text-align: center; color: var(--tt-blue); border: 1px solid currentColor; border-radius: 26px;
+    padding: 13px; font-size: 16px; font-weight: 500; margin-top: 12px; }
+  .ghost:focus-visible { outline: 3px solid var(--tt-blue); outline-offset: 3px; }
   .secondary { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
     text-align: center; color: var(--error-color, #d93025); padding: 14px; font-size: 15px; }
   .big-code { text-align: center; font-size: 34px; padding: 22px 8px 6px; }
@@ -272,6 +285,39 @@ class TtlockSelfhostPanel extends HTMLElement {
     if (known[code]) return this._t(known[code]);
     const message = (err && err.message) || String(err);
     return message === "no_gateway" ? this._t("err_no_gateway") : this._t("failed", { err: message });
+  }
+
+  // Adds the doors card once: a card that already shows the lock is left alone.
+  async _toDashboard(lock) {
+    let config;
+    try {
+      config = await this._hass.callWS({ type: "lovelace/config", url_path: null });
+    } catch (err) {
+      config = null;
+    }
+    if (!config || !Array.isArray(config.views) || !config.views.length) {
+      this._say(this._t("dashboard_auto"));
+      return;
+    }
+    const cards = [...cardsIn(config.views)].filter((card) => card.type === DOORS_CARD);
+    const entity = lock && lock.entities.lock;
+    const fixed = cards.find((card) => Array.isArray(card.entities));
+    if (cards.some((card) => !Array.isArray(card.entities) || !entity || card.entities.includes(entity))) {
+      this._say(this._t("already_on_dashboard"));
+      return;
+    }
+    if (fixed) fixed.entities.push(entity);
+    else {
+      const view = config.views[0];
+      if (view.sections) view.sections.push({ type: "grid", cards: [{ type: DOORS_CARD }] });
+      else (view.cards ||= []).push({ type: DOORS_CARD });
+    }
+    try {
+      await this._hass.callWS({ type: "lovelace/config/save", url_path: null, config });
+      this._say(this._t("sent_to_dashboard"));
+    } catch (err) {
+      this._say(this._error(err));
+    }
   }
 
   _go(view, mac) {
@@ -416,7 +462,8 @@ class TtlockSelfhostPanel extends HTMLElement {
         )
       );
     }
-    return h(
+    return [
+      h(
       "div",
       { class: "card" },
       this._locks.map((lock) =>
@@ -429,7 +476,9 @@ class TtlockSelfhostPanel extends HTMLElement {
           icon("mdi:chevron-right")
         )
       )
-    );
+      ),
+      h("button", { class: "ghost", onclick: () => this._toDashboard(null) }, this._t("to_dashboard")),
+    ];
   }
 
   _status(lock) {
@@ -1099,6 +1148,7 @@ class TtlockSelfhostPanel extends HTMLElement {
         },
         this._t("read_now")
       ),
+      h("button", { class: "ghost", onclick: () => this._toDashboard(lock) }, this._t("to_dashboard")),
     ];
   }
 }
