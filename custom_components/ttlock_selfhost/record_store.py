@@ -1,4 +1,4 @@
-"""Persisted operation-log cursor for ttlock_ble."""
+"""Persisted operation-log cursor for ttlock_selfhost."""
 
 from __future__ import annotations
 

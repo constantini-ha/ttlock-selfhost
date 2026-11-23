@@ -6,8 +6,8 @@ import httpx
 import pytest
 from ttlock_ble import CLOUD_APPS, CloudError
 
-from custom_components.ttlock_ble.api import TtlockBleApiClient
-from custom_components.ttlock_ble.exceptions import (
+from custom_components.ttlock_selfhost.api import TtlockBleApiClient
+from custom_components.ttlock_selfhost.exceptions import (
     TtlockBleApiClientAuthenticationError,
     TtlockBleApiClientCommunicationError,
     TtlockBleApiClientError,
@@ -26,7 +26,7 @@ def _client(mock_cloud: MagicMock) -> TtlockBleApiClient:
 @pytest.mark.parametrize("cloud_app", ["dlock_xp", "schlage_breeze"])
 def test_client_signs_in_as_the_selected_app(cloud_app: str) -> None:
     httpx_client = MagicMock(spec=httpx.AsyncClient)
-    with patch("custom_components.ttlock_ble.api.TTLockCloud") as cls:
+    with patch("custom_components.ttlock_selfhost.api.TTLockCloud") as cls:
         TtlockBleApiClient(httpx_client=httpx_client, cloud_app=cloud_app)
     cls.for_app.assert_called_once_with(CLOUD_APPS[cloud_app], client=httpx_client)
 

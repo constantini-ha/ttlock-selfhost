@@ -1,4 +1,4 @@
-"""Diagnostics support for ttlock_ble."""
+"""Diagnostics support for ttlock_selfhost."""
 
 from __future__ import annotations
 

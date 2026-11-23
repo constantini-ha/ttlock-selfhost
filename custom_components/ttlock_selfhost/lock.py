@@ -1,4 +1,4 @@
-"""Lock platform for ttlock_ble."""
+"""Lock platform for ttlock_selfhost."""
 
 from __future__ import annotations
 

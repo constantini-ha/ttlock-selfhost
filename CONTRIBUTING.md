@@ -15,7 +15,7 @@ Pull requests are the best way to propose changes to the codebase.
 
 1. Fork the repo and create your branch from `main`.
 2. If you've changed something, update the documentation.
-3. Make sure your code lints (`uv run ruff format --check .`, `uv run ruff check .`, `uv run mypy custom_components/ttlock_ble`).
+3. Make sure your code lints (`uv run ruff format --check .`, `uv run ruff check .`, `uv run mypy custom_components/ttlock_selfhost`).
 4. Test your contribution.
 5. Issue that pull request!
 
@@ -46,7 +46,7 @@ The project uses [ruff](https://docs.astral.sh/ruff/) (config in `pyproject.toml
 
 ## Test your code modification
 
-This template is based on [ttlock_ble template](https://github.com/ludeeus/ttlock_ble).
+This template is based on [ttlock_selfhost template](https://github.com/ludeeus/ttlock_selfhost).
 
 It comes with a development environment in a container, easy to launch if you use Visual Studio Code. With this container you will have a stand-alone Home Assistant instance running and already configured with the included [`configuration.yaml`](./config/configuration.yaml) file.
 

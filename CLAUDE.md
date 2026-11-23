@@ -9,10 +9,10 @@ Before creating, renaming or restructuring any file/class/function, **read [`COD
 **After every code change, always run lint then tests, in that order, before declaring the task done:**
 
 ```bash
-uv run ruff format --check . && uv run ruff check . && uv run mypy custom_components/ttlock_ble && uv run pytest
+uv run ruff format --check . && uv run ruff check . && uv run mypy custom_components/ttlock_selfhost && uv run pytest
 ```
 
-- `ruff format --check .`, `ruff check .` and `mypy custom_components/ttlock_ble` enforce formatting, linting and strict typing. Fix any failure and re-run before moving on.
+- `ruff format --check .`, `ruff check .` and `mypy custom_components/ttlock_selfhost` enforce formatting, linting and strict typing. Fix any failure and re-run before moving on.
 - `pytest` runs with the `--cov` flags (configured in `pyproject.toml`) and enforces the coverage gate. Both ruff and mypy configuration also live in `pyproject.toml`.
 
 Both gates mirror CI (`.github/workflows/ci.yml`). Skip this only when the change literally cannot affect lint or tests (e.g., README-only edits).
@@ -32,7 +32,7 @@ Verify the pairing on PyPI before committing: the `requires_dist` of `pytest-hom
 
 This integration wraps the sibling repo [`ttlock-ble`](https://github.com/roquerodrigo/ttlock-ble), which owns all BLE protocol/crypto logic and the cloud login client. The pin lives in **two places that can drift**:
 
-- `custom_components/ttlock_ble/manifest.json` → `requirements: ["ttlock-ble==<version>"]` — this is what HACS/HA actually installs for end users.
+- `custom_components/ttlock_selfhost/manifest.json` → `requirements: ["ttlock-ble==<version>"]` — this is what HACS/HA actually installs for end users.
 - `pyproject.toml` → `dependency-groups.dev` → `"ttlock-ble==<version>"` — this is what lint/mypy/pytest run against locally and in CI.
 
 If these two pins diverge, the tests would pass against an SDK version users never get — `tests/test_packaging.py` fails the suite when they differ. A breaking change in the SDK's public API (`TTLockCloud`, `TTLockClient`, `VirtualKey`, `CloudError`, the `disconnected_callback` signature) requires bumping both pins together, then re-running lint + tests here — the SDK repo's own release does not by itself update anything on this side.
@@ -104,8 +104,8 @@ Every cloud call in the flow, `_async_fetch_keys` included, maps its exceptions 
 - A reconnect maintain loop driven by an `asyncio.Event` the SDK's `disconnected_callback` toggles.
 - A maintain loop that only runs for `permanent_connection`, reading real state immediately after connecting and waiting `PERMANENT_STATE_REFRESH_SECONDS` between completed reads. Reads keep idle firmware responsive and reconcile missing notifications; their battery impact is unmeasured. A drop wakes the loop immediately; failures retain exponential backoff. The loop also reads the operation log after every (re)connect and every push: a held session silences the lock's advertisements, and with them the unsynced-records flag `coordinator.py` reads the log on, so without this the records of operations at the door would wait for the next command. Without the option there are no periodic reads or background reconnects.
 - A push listener registered before `connect()` and removed if connection setup fails. Notifications can arrive after subscription but before `connect()` returns.
-- Queried positions are dispatched on `ttlock_ble_state_read_<mac>` with their monotonic observation time, separately from push events. The lock entity adopts them through `_adopt`, preserving stale-reading rejection and command settle windows; a periodic read must not be treated as a bolt-completion notification.
-- A dispatcher forwarder: any push event the SDK emits is fanned out on `ttlock_ble_event_<mac>` so the lock, sensor, and event entities can subscribe. The BLE drop is announced from bleak's own callback, not from the teardown that follows the cooldown, so the connectivity sensor does not claim a live link for five minutes after the link died.
+- Queried positions are dispatched on `ttlock_selfhost_state_read_<mac>` with their monotonic observation time, separately from push events. The lock entity adopts them through `_adopt`, preserving stale-reading rejection and command settle windows; a periodic read must not be treated as a bolt-completion notification.
+- A dispatcher forwarder: any push event the SDK emits is fanned out on `ttlock_selfhost_event_<mac>` so the lock, sensor, and event entities can subscribe. The BLE drop is announced from bleak's own callback, not from the teardown that follows the cooldown, so the connectivity sensor does not claim a live link for five minutes after the link died.
 - A retry timer for the operation log: a read that did not reach the lock leaves the advertised records flag up, and the lock then repeats the very same payload, which HA's bluetooth manager does not forward a second time. Waiting for another advertisement to retry therefore waits forever, so `coordinator.py` arms a timer instead and cancels it when an advertisement reports the flag down.
 - Backlog seeding: on a lock with no restored cursor, the first operation-log fetch that actually reaches it only fills `_seen_records` and dispatches nothing. The lock returns everything unsynced since its last cursor sync, and replaying that history as live events would fire automations for unlocks from days ago. Tying it to a *successful* fetch matters — a lock out of range at setup must not spend its seeding pass on a poll that read nothing. `record_store.py` persists the cursor, so the pass runs once per lock rather than once per HA start; keying it to the start is what made a restart swallow whatever happened at the door just after it.
 - A connect step that catches every exception, not just `TTLockError`: the SDK leaves `start_notify` unwrapped, so bleak's own `BleakError` escaped the wrapper each command path relies on, and the half-open session is closed rather than left to the firmware's idle timeout.
@@ -119,7 +119,7 @@ Every cloud call in the flow, `_async_fetch_keys` included, maps its exceptions 
 
 ### Connection quality sensors
 
-`sensor.py` adds four diagnostics per lock. `TtlockBleSignalStrengthSensor` reads the RSSI and scanner of the last advertisement from `async_last_service_info` on the same kind of timer as the last-seen sensor, for the same reasons. `TtlockBleSignalQualitySensor` subclasses it to report the same reading as a percentage (`rssi_to_percentage`, −100 → 0%, −50 → 100%), as a separate entity because `SensorDeviceClass.SIGNAL_STRENGTH` only accepts decibel units. `TtlockBleConnectTimeSensor` and `TtlockBleConnectionSuccessRateSensor` read `TtlockBleConnectionQuality` (`connection_quality.py`), which `connection.py` feeds from `_async_ensure_connected_locked` and announces on `ttlock_ble_quality_<mac>`. Two choices shape it:
+`sensor.py` adds four diagnostics per lock. `TtlockBleSignalStrengthSensor` reads the RSSI and scanner of the last advertisement from `async_last_service_info` on the same kind of timer as the last-seen sensor, for the same reasons. `TtlockBleSignalQualitySensor` subclasses it to report the same reading as a percentage (`rssi_to_percentage`, −100 → 0%, −50 → 100%), as a separate entity because `SensorDeviceClass.SIGNAL_STRENGTH` only accepts decibel units. `TtlockBleConnectTimeSensor` and `TtlockBleConnectionSuccessRateSensor` read `TtlockBleConnectionQuality` (`connection_quality.py`), which `connection.py` feeds from `_async_ensure_connected_locked` and announces on `ttlock_selfhost_quality_<mac>`. Two choices shape it:
 
 - **Only attempts that reached the radio count.** A lock no scanner has heard is never dialled; counting that as a failure would make the rate report presence, which is the last-seen sensor's job, and an idle lock out of the connectable scanners' recent history would read as a broken link.
 - **The window lives in memory.** It is the last `CONNECTION_ATTEMPT_WINDOW` attempts of this run; a rate carried across a restart would describe a link that may since have changed proxy.

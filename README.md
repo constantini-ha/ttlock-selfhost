@@ -159,7 +159,7 @@ scripts/develop    # start Home Assistant in debug mode with the integration loa
 # Lint and test directly (config lives in pyproject.toml):
 uv run ruff format --check .
 uv run ruff check .
-uv run mypy custom_components/ttlock_ble
+uv run mypy custom_components/ttlock_selfhost
 uv run pytest
 ```
 
@@ -172,7 +172,7 @@ rm config/.storage/core.entity_registry config/.storage/core.device_registry
 ## Layout
 
 ```
-custom_components/ttlock_ble/
+custom_components/ttlock_selfhost/
 ├── __init__.py        # config-entry lifecycle: setup / unload / reload
 ├── advertisement.py   # TtlockBleAdvertisementTracker: state from advertisements
 ├── api.py             # TtlockBleApiClient: TTLockCloud wrapper (cloud bootstrap only)
@@ -226,7 +226,7 @@ This wires ruff, mypy and basic file hygiene checks (`.pre-commit-config.yaml`) 
 
 - **`ci.yml`** — lint (ruff check + format, mypy) and tests (pytest with the 90 % coverage gate) via the shared reusable workflows, and the Home Assistant Marketplace validation (`hassfest` and the catalog checks) of [Home Assistant Autopilot](https://github.com/marketplace/actions/home-assistant-autopilot)
 - **`codeql.yml`** — GitHub CodeQL security scan; push/PR to `main` and a weekly cron
-- **`release.yml`** — [Release Autopilot](https://github.com/marketplace/actions/release-autopilot), gated on a green CI run on `main` or started manually, opens a release PR based on conventional commits; when a release is created, attaches the `ttlock_ble.zip` that HACS downloads
+- **`release.yml`** — [Release Autopilot](https://github.com/marketplace/actions/release-autopilot), gated on a green CI run on `main` or started manually, opens a release PR based on conventional commits; when a release is created, attaches the `ttlock_selfhost.zip` that HACS downloads
 - **`auto-assign.yml`** — assigns the repository owner to new issues and pull requests
 
 ## Support

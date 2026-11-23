@@ -1,4 +1,4 @@
-"""Sensor platform for ttlock_ble — lock and link health, credentials, last unlock."""
+"""Sensor platform for ttlock_selfhost — lock and link health, credentials, last unlock."""
 
 from __future__ import annotations
 

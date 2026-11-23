@@ -17,11 +17,13 @@ from ttlock_ble import (
     PasscodeEntry,
 )
 
-from custom_components.ttlock_ble.connection import log_signal
-from custom_components.ttlock_ble.const import DOMAIN
-from custom_components.ttlock_ble.credential_store import async_get_credential_store
-from custom_components.ttlock_ble.credential_type import TtlockBleCredentialType
-from custom_components.ttlock_ble.data import TtlockBleKnownCredential
+from custom_components.ttlock_selfhost.connection import log_signal
+from custom_components.ttlock_selfhost.const import DOMAIN
+from custom_components.ttlock_selfhost.credential_store import (
+    async_get_credential_store,
+)
+from custom_components.ttlock_selfhost.credential_type import TtlockBleCredentialType
+from custom_components.ttlock_selfhost.data import TtlockBleKnownCredential
 
 MAC = "AA:BB:CC:DD:EE:FF"
 

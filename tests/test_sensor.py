@@ -53,7 +53,9 @@ async def test_clock_drift_reports_the_last_comparison(
     setup_integration,
     sample_virtual_key,
 ) -> None:
-    from custom_components.ttlock_ble.clock_sync_store import async_get_clock_sync_store
+    from custom_components.ttlock_selfhost.clock_sync_store import (
+        async_get_clock_sync_store,
+    )
 
     store = await async_get_clock_sync_store(hass)
     store.async_remember(
@@ -100,7 +102,7 @@ async def test_battery_sensor_unknown_when_coordinator_returns_none(
 ) -> None:
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-    from custom_components.ttlock_ble.const import DOMAIN
+    from custom_components.ttlock_selfhost.const import DOMAIN
 
     mock_ttlock_connection.async_query_state = AsyncMock(return_value=None)
     entry = MockConfigEntry(
@@ -142,7 +144,7 @@ async def test_battery_sensor_updates_from_push_event(
     from homeassistant.helpers.dispatcher import async_dispatcher_send
     from ttlock_ble import LockEvent
 
-    from custom_components.ttlock_ble.connection import event_signal
+    from custom_components.ttlock_selfhost.connection import event_signal
 
     state = _battery_state(hass)
     assert state.state == "80"
@@ -165,7 +167,7 @@ async def test_battery_sensor_ignores_push_event_without_battery(
     from homeassistant.helpers.dispatcher import async_dispatcher_send
     from ttlock_ble import LockEvent
 
-    from custom_components.ttlock_ble.connection import event_signal
+    from custom_components.ttlock_selfhost.connection import event_signal
 
     state = _battery_state(hass)
     assert state.state == "80"
@@ -235,7 +237,7 @@ async def test_battery_sensor_follows_a_pushed_rise_over_an_advertisement(
     from homeassistant.helpers.dispatcher import async_dispatcher_send
     from ttlock_ble import LockEvent
 
-    from custom_components.ttlock_ble.connection import event_signal
+    from custom_components.ttlock_selfhost.connection import event_signal
 
     state = _battery_state(hass)
     _publish_battery(setup_integration, sample_virtual_key.lockMac, 70, advertised=True)
@@ -270,13 +272,19 @@ def test_battery_sync_from_coordinator_no_snapshot_keeps_value(
 ) -> None:
     """An empty coordinator snapshot leaves `_attr_native_value` untouched."""
 
-    from custom_components.ttlock_ble.clock_sync_store import TtlockBleClockSyncStore
-    from custom_components.ttlock_ble.coordinator import TtlockBleDataUpdateCoordinator
-    from custom_components.ttlock_ble.credential_store import TtlockBleCredentialStore
-    from custom_components.ttlock_ble.device_description_store import (
+    from custom_components.ttlock_selfhost.clock_sync_store import (
+        TtlockBleClockSyncStore,
+    )
+    from custom_components.ttlock_selfhost.coordinator import (
+        TtlockBleDataUpdateCoordinator,
+    )
+    from custom_components.ttlock_selfhost.credential_store import (
+        TtlockBleCredentialStore,
+    )
+    from custom_components.ttlock_selfhost.device_description_store import (
         TtlockBleDeviceDescriptionStore,
     )
-    from custom_components.ttlock_ble.sensor import TtlockBleBatterySensor
+    from custom_components.ttlock_selfhost.sensor import TtlockBleBatterySensor
 
     coordinator = TtlockBleDataUpdateCoordinator(
         hass,
@@ -299,13 +307,19 @@ def test_battery_sync_adopts_an_advertisement_while_nothing_is_known(
 ) -> None:
     """With no reading yet, an advertised level is the best there is."""
 
-    from custom_components.ttlock_ble.clock_sync_store import TtlockBleClockSyncStore
-    from custom_components.ttlock_ble.coordinator import TtlockBleDataUpdateCoordinator
-    from custom_components.ttlock_ble.credential_store import TtlockBleCredentialStore
-    from custom_components.ttlock_ble.device_description_store import (
+    from custom_components.ttlock_selfhost.clock_sync_store import (
+        TtlockBleClockSyncStore,
+    )
+    from custom_components.ttlock_selfhost.coordinator import (
+        TtlockBleDataUpdateCoordinator,
+    )
+    from custom_components.ttlock_selfhost.credential_store import (
+        TtlockBleCredentialStore,
+    )
+    from custom_components.ttlock_selfhost.device_description_store import (
         TtlockBleDeviceDescriptionStore,
     )
-    from custom_components.ttlock_ble.sensor import TtlockBleBatterySensor
+    from custom_components.ttlock_selfhost.sensor import TtlockBleBatterySensor
 
     coordinator = TtlockBleDataUpdateCoordinator(
         hass,
@@ -354,7 +368,7 @@ def _added_last_seen_entity(hass):
 
 
 def _sensor(hass, setup_integration, sample_virtual_key):
-    from custom_components.ttlock_ble.sensor import TtlockBleLastSeenSensor
+    from custom_components.ttlock_selfhost.sensor import TtlockBleLastSeenSensor
 
     entity = TtlockBleLastSeenSensor(
         setup_integration.runtime_data.coordinator,
@@ -379,11 +393,11 @@ async def test_last_seen_converts_the_monotonic_reception_time(
     info.time = 1000.0
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=info,
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.MONOTONIC_TIME",
+            "custom_components.ttlock_selfhost.sensor.MONOTONIC_TIME",
             return_value=1060.0,
         ),
     ):
@@ -404,15 +418,17 @@ async def test_last_seen_is_stable_while_the_advertisement_does_not_change(
     info = MagicMock()
     info.time = 1000.0
     with patch(
-        "custom_components.ttlock_ble.sensor.async_last_service_info",
+        "custom_components.ttlock_selfhost.sensor.async_last_service_info",
         return_value=info,
     ):
         with patch(
-            "custom_components.ttlock_ble.sensor.MONOTONIC_TIME", return_value=1060.0
+            "custom_components.ttlock_selfhost.sensor.MONOTONIC_TIME",
+            return_value=1060.0,
         ):
             first = entity.native_value
         with patch(
-            "custom_components.ttlock_ble.sensor.MONOTONIC_TIME", return_value=1200.0
+            "custom_components.ttlock_selfhost.sensor.MONOTONIC_TIME",
+            return_value=1200.0,
         ):
             second = entity.native_value
     assert first == second
@@ -429,15 +445,15 @@ async def test_last_seen_moves_on_a_newer_advertisement(
     older, newer = MagicMock(), MagicMock()
     older.time, newer.time = 1000.0, 1100.0
     with patch(
-        "custom_components.ttlock_ble.sensor.MONOTONIC_TIME", return_value=1200.0
+        "custom_components.ttlock_selfhost.sensor.MONOTONIC_TIME", return_value=1200.0
     ):
         with patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=older,
         ):
             first = entity.native_value
         with patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=newer,
         ):
             second = entity.native_value
@@ -457,16 +473,17 @@ async def test_last_seen_keeps_its_value_when_history_is_dropped(
     info.time = 1000.0
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=info,
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.MONOTONIC_TIME", return_value=1060.0
+            "custom_components.ttlock_selfhost.sensor.MONOTONIC_TIME",
+            return_value=1060.0,
         ),
     ):
         seen = entity.native_value
     with patch(
-        "custom_components.ttlock_ble.sensor.async_last_service_info",
+        "custom_components.ttlock_selfhost.sensor.async_last_service_info",
         return_value=None,
     ):
         assert entity.native_value == seen
@@ -507,11 +524,12 @@ async def test_last_seen_rereads_without_touching_the_coordinator(
     info.time = 1000.0
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=info,
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.MONOTONIC_TIME", return_value=1010.0
+            "custom_components.ttlock_selfhost.sensor.MONOTONIC_TIME",
+            return_value=1010.0,
         ),
         patch.object(
             setup_integration.runtime_data.coordinator,
@@ -537,7 +555,7 @@ async def _record(hass, mac, record_type, *, minute=0, **fields) -> None:
     from homeassistant.helpers.dispatcher import async_dispatcher_send
     from ttlock_ble import LogEntry
 
-    from custom_components.ttlock_ble.connection import log_signal
+    from custom_components.ttlock_selfhost.connection import log_signal
 
     async_dispatcher_send(
         hass,
@@ -554,11 +572,13 @@ async def _record(hass, mac, record_type, *, minute=0, **fields) -> None:
 
 
 async def _name_fingerprint(hass, mac, number: int, name: str) -> None:
-    from custom_components.ttlock_ble.credential_store import (
+    from custom_components.ttlock_selfhost.credential_store import (
         async_get_credential_store,
     )
-    from custom_components.ttlock_ble.credential_type import TtlockBleCredentialType
-    from custom_components.ttlock_ble.data import (
+    from custom_components.ttlock_selfhost.credential_type import (
+        TtlockBleCredentialType,
+    )
+    from custom_components.ttlock_selfhost.data import (
         TtlockBleEnrolledFingerprint,
         TtlockBleKnownCredential,
     )
@@ -664,9 +684,9 @@ async def test_last_unlocked_by_names_home_assistant(
 def _note_unlock(hass, mac, user_name) -> None:
     import datetime as dt
 
-    from custom_components.ttlock_ble.const import DOMAIN
-    from custom_components.ttlock_ble.data import TtlockBleIssuedCommand
-    from custom_components.ttlock_ble.lock_command import TtlockBleLockCommand
+    from custom_components.ttlock_selfhost.const import DOMAIN
+    from custom_components.ttlock_selfhost.data import TtlockBleIssuedCommand
+    from custom_components.ttlock_selfhost.lock_command import TtlockBleLockCommand
 
     stamped_at = dt.datetime(2026, 10, 28, 10, 0)  # noqa: DTZ001 — lock RTC is naive
     hass.config_entries.async_entries(DOMAIN)[0].runtime_data.command_journal.note(
@@ -779,7 +799,7 @@ async def test_last_unlocked_by_takes_an_undated_unlock(
     from homeassistant.helpers.dispatcher import async_dispatcher_send
     from ttlock_ble import LogEntry, LogOperate
 
-    from custom_components.ttlock_ble.connection import log_signal
+    from custom_components.ttlock_selfhost.connection import log_signal
 
     await _record(
         hass,
@@ -813,7 +833,7 @@ async def _setup_with_restored(hass, sample_stored_key, value, attributes) -> No
         mock_restore_cache_with_extra_data,
     )
 
-    from custom_components.ttlock_ble.const import DOMAIN
+    from custom_components.ttlock_selfhost.const import DOMAIN
 
     mock_restore_cache_with_extra_data(
         hass,
@@ -927,11 +947,11 @@ async def test_signal_strength_reports_the_rssi_and_the_scanner_that_heard_it(
     scanner.name = "Living room proxy (11:22:33:44:55:66)"
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=_service_info(rssi=-72, source="11:22:33:44:55:66"),
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.async_scanner_by_source",
+            "custom_components.ttlock_selfhost.sensor.async_scanner_by_source",
             return_value=scanner,
         ),
     ):
@@ -956,11 +976,11 @@ async def test_signal_strength_names_an_unknown_scanner_by_its_source(
     state = _state_by_unique_id(hass, "signal_strength")
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=_service_info(rssi=-80, source="11:22:33:44:55:66"),
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.async_scanner_by_source",
+            "custom_components.ttlock_selfhost.sensor.async_scanner_by_source",
             return_value=None,
         ),
     ):
@@ -982,17 +1002,17 @@ async def test_signal_strength_keeps_its_value_when_history_is_dropped(
     entity = _added_entity(hass, state.entity_id)
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=_service_info(rssi=-65, source="hci0"),
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.async_scanner_by_source",
+            "custom_components.ttlock_selfhost.sensor.async_scanner_by_source",
             return_value=None,
         ),
     ):
         entity._async_reread_history(dt_util.utcnow())
     with patch(
-        "custom_components.ttlock_ble.sensor.async_last_service_info",
+        "custom_components.ttlock_selfhost.sensor.async_last_service_info",
         return_value=None,
     ):
         entity._async_reread_history(dt_util.utcnow())
@@ -1029,7 +1049,7 @@ async def test_connection_quality_follows_every_session_attempt(
 ) -> None:
     from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-    from custom_components.ttlock_ble.connection import quality_signal
+    from custom_components.ttlock_selfhost.connection import quality_signal
 
     quality = setup_integration.runtime_data.connections[
         sample_virtual_key.lockMac
@@ -1072,7 +1092,7 @@ async def test_connection_quality_sensors_are_diagnostic(
     [(-120, 0), (-100, 0), (-73, 54), (-50, 100), (-30, 100)],
 )
 def test_rssi_maps_linearly_onto_the_usable_range(rssi, percentage) -> None:
-    from custom_components.ttlock_ble.sensor import rssi_to_percentage
+    from custom_components.ttlock_selfhost.sensor import rssi_to_percentage
 
     assert rssi_to_percentage(rssi) == percentage
 
@@ -1098,11 +1118,11 @@ async def test_signal_quality_reports_the_rssi_as_a_percentage(
     state = _state_by_unique_id(hass, "signal_quality")
     with (
         patch(
-            "custom_components.ttlock_ble.sensor.async_last_service_info",
+            "custom_components.ttlock_selfhost.sensor.async_last_service_info",
             return_value=_service_info(rssi=-73, source="hci0"),
         ),
         patch(
-            "custom_components.ttlock_ble.sensor.async_scanner_by_source",
+            "custom_components.ttlock_selfhost.sensor.async_scanner_by_source",
             return_value=None,
         ),
     ):

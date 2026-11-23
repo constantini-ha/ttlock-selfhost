@@ -1,4 +1,4 @@
-"""Switch platform for ttlock_ble — the lock's beep."""
+"""Switch platform for ttlock_selfhost — the lock's beep."""
 
 from __future__ import annotations
 

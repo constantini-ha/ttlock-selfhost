@@ -1,4 +1,4 @@
-"""Exception classes for the ttlock_ble API client."""
+"""Exception classes for the ttlock_selfhost API client."""
 
 from __future__ import annotations
 

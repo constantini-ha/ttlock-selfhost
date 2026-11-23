@@ -1,4 +1,4 @@
-"""Options flow for ttlock_ble."""
+"""Options flow for ttlock_selfhost."""
 
 from __future__ import annotations
 

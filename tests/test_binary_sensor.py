@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from custom_components.ttlock_ble.connection import connection_signal, log_signal
+from custom_components.ttlock_selfhost.connection import connection_signal, log_signal
 
 
 async def test_connection_binary_sensor_created_for_each_key(
@@ -111,7 +111,7 @@ def _door_entity_id(hass, lock_mac: str) -> str | None:
 
     return er.async_get(hass).async_get_entity_id(
         "binary_sensor",
-        "ttlock_ble",
+        "ttlock_selfhost",
         f"{lock_mac}_door",
     )
 
@@ -237,7 +237,7 @@ async def test_door_binary_sensor_registered_without_a_state_starts_unknown(
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
     entry = MockConfigEntry(
-        domain="ttlock_ble",
+        domain="ttlock_selfhost",
         data={
             "username": "user@example.com",
             "password": "pass",
@@ -248,7 +248,7 @@ async def test_door_binary_sensor_registered_without_a_state_starts_unknown(
     entry.add_to_hass(hass)
     er.async_get(hass).async_get_or_create(
         "binary_sensor",
-        "ttlock_ble",
+        "ttlock_selfhost",
         f"{sample_stored_key['lockMac']}_door",
         config_entry=entry,
     )

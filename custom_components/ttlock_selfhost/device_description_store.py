@@ -1,4 +1,4 @@
-"""Persisted per-lock hardware description for ttlock_ble."""
+"""Persisted per-lock hardware description for ttlock_selfhost."""
 
 from __future__ import annotations
 

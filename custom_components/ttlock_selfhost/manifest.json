@@ -1,5 +1,5 @@
 {
-  "domain": "ttlock_ble",
+  "domain": "ttlock_selfhost",
   "name": "TTLock BLE",
   "bluetooth": [
     {

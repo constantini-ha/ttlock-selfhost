@@ -1,5 +1,5 @@
 """
-DataUpdateCoordinator for ttlock_ble.
+DataUpdateCoordinator for ttlock_selfhost.
 
 State arrives without opening anything: `async_apply_advertisement`
 publishes what `TtlockBleAdvertisementTracker` decodes from the lock's

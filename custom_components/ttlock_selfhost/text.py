@@ -1,4 +1,4 @@
-"""Text platform for ttlock_ble — naming each fingerprint, card and passcode."""
+"""Text platform for ttlock_selfhost — naming each fingerprint, card and passcode."""
 
 from __future__ import annotations
 

@@ -6,7 +6,10 @@ from pathlib import Path
 import pytest
 
 TRANSLATIONS_DIR = (
-    Path(__file__).parent.parent / "custom_components" / "ttlock_ble" / "translations"
+    Path(__file__).parent.parent
+    / "custom_components"
+    / "ttlock_selfhost"
+    / "translations"
 )
 
 
@@ -86,9 +89,11 @@ async def test_entity_translation_keys_and_authored_names_agree(
     from homeassistant.helpers.dispatcher import async_dispatcher_send
     from ttlock_ble import LogEntry, LogOperate
 
-    from custom_components.ttlock_ble.connection import log_signal
-    from custom_components.ttlock_ble.credential_type import TtlockBleCredentialType
-    from custom_components.ttlock_ble.data import TtlockBleKnownCredential
+    from custom_components.ttlock_selfhost.connection import log_signal
+    from custom_components.ttlock_selfhost.credential_type import (
+        TtlockBleCredentialType,
+    )
+    from custom_components.ttlock_selfhost.data import TtlockBleKnownCredential
 
     coordinator = setup_integration.runtime_data.coordinator
     mac = sample_virtual_key.lockMac
@@ -118,7 +123,7 @@ async def test_entity_translation_keys_and_authored_names_agree(
     requested = {
         (entry.domain, entry.translation_key)
         for entry in registry.entities.values()
-        if entry.platform == "ttlock_ble" and entry.translation_key is not None
+        if entry.platform == "ttlock_selfhost" and entry.translation_key is not None
     }
     assert requested, "the integration registered no translated entity"
     authored = _authored_entity_keys()

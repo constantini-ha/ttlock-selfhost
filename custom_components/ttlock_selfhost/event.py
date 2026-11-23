@@ -1,5 +1,5 @@
 """
-Event platform for ttlock_ble.
+Event platform for ttlock_selfhost.
 
 Surfaces historical operation records read from the lock's on-device
 storage (fingerprint, keypad, IC card, etc.) every time the integration

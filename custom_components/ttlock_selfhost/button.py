@@ -1,4 +1,4 @@
-"""Button platform for ttlock_ble — reading the credential lists on demand."""
+"""Button platform for ttlock_selfhost — reading the credential lists on demand."""
 
 from __future__ import annotations
 

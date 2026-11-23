@@ -1,4 +1,4 @@
-"""Binary sensor platform for ttlock_ble — BLE connection and door sensor state."""
+"""Binary sensor platform for ttlock_selfhost — BLE connection and door sensor state."""
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 """
 TTLock BLE cloud-bootstrap client.
 
-Wraps `ttlock_ble.TTLockCloud` so the config flow and entry setup only
+Wraps `ttlock_selfhost.TTLockCloud` so the config flow and entry setup only
 see the integration's own exception hierarchy. Calls run through a
 shared `httpx.AsyncClient` supplied by Home Assistant; cleanup of that
 client stays with the caller.

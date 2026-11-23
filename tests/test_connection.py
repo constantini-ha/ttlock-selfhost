@@ -19,7 +19,7 @@ from ttlock_ble import (
     TTLockError,
 )
 
-from custom_components.ttlock_ble.connection import (
+from custom_components.ttlock_selfhost.connection import (
     TtlockBleConnection,
     connection_signal,
     event_signal,
@@ -27,7 +27,7 @@ from custom_components.ttlock_ble.connection import (
     quality_signal,
     state_signal,
 )
-from custom_components.ttlock_ble.data import TtlockBleLogCursor
+from custom_components.ttlock_selfhost.data import TtlockBleLogCursor
 
 
 def _log_entry(record_number: int) -> SimpleNamespace:
@@ -36,13 +36,15 @@ def _log_entry(record_number: int) -> SimpleNamespace:
 
 
 def test_event_signal_lowercases_mac() -> None:
-    assert event_signal("AA:BB:CC:DD:EE:FF") == "ttlock_ble_event_aa:bb:cc:dd:ee:ff"
+    assert (
+        event_signal("AA:BB:CC:DD:EE:FF") == "ttlock_selfhost_event_aa:bb:cc:dd:ee:ff"
+    )
 
 
 def test_connection_signal_lowercases_mac() -> None:
     assert (
         connection_signal("AA:BB:CC:DD:EE:FF")
-        == "ttlock_ble_connection_aa:bb:cc:dd:ee:ff"
+        == "ttlock_selfhost_connection_aa:bb:cc:dd:ee:ff"
     )
 
 
@@ -114,7 +116,8 @@ async def test_permanent_reads_recover_changes_without_pushes(
     ]
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch(
-        "custom_components.ttlock_ble.connection.PERMANENT_STATE_REFRESH_SECONDS", 0.01
+        "custom_components.ttlock_selfhost.connection.PERMANENT_STATE_REFRESH_SECONDS",
+        0.01,
     ):
         await conn.async_start()
         try:
@@ -196,7 +199,8 @@ async def test_permanent_loop_reads_log_after_connect_and_each_push(
     mock_ttlock_client.get_operation_log.side_effect = get_operation_log
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch(
-        "custom_components.ttlock_ble.connection.PERMANENT_STATE_REFRESH_SECONDS", 0.01
+        "custom_components.ttlock_selfhost.connection.PERMANENT_STATE_REFRESH_SECONDS",
+        0.01,
     ):
         await conn.async_start()
         try:
@@ -252,7 +256,7 @@ async def test_permanent_read_failure_reconnects_and_recovers(
     ]
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch(
-        "custom_components.ttlock_ble.connection.RECONNECT_INITIAL_BACKOFF", 0.01
+        "custom_components.ttlock_selfhost.connection.RECONNECT_INITIAL_BACKOFF", 0.01
     ):
         await conn.async_start()
         try:
@@ -423,7 +427,7 @@ async def test_async_start_creates_task(
 ) -> None:
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch.multiple(
-        "custom_components.ttlock_ble.connection",
+        "custom_components.ttlock_selfhost.connection",
         RECONNECT_INITIAL_BACKOFF=0.01,
         RECONNECT_MAX_BACKOFF=0.05,
     ):
@@ -441,7 +445,7 @@ async def test_async_start_idempotent(
 ) -> None:
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch.multiple(
-        "custom_components.ttlock_ble.connection",
+        "custom_components.ttlock_selfhost.connection",
         RECONNECT_INITIAL_BACKOFF=0.01,
         RECONNECT_MAX_BACKOFF=0.05,
     ):
@@ -466,7 +470,7 @@ async def test_maintain_loop_keeps_trying_when_device_missing(
     mock_ble_resolver.return_value = None
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch.multiple(
-        "custom_components.ttlock_ble.connection",
+        "custom_components.ttlock_selfhost.connection",
         RECONNECT_INITIAL_BACKOFF=0.005,
         RECONNECT_MAX_BACKOFF=0.01,
     ):
@@ -487,7 +491,7 @@ async def test_maintain_loop_logs_unexpected_error(
     mock_ble_resolver.side_effect = [RuntimeError("kaboom"), None, None, None]
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch.multiple(
-        "custom_components.ttlock_ble.connection",
+        "custom_components.ttlock_selfhost.connection",
         RECONNECT_INITIAL_BACKOFF=0.005,
         RECONNECT_MAX_BACKOFF=0.01,
     ):
@@ -518,7 +522,7 @@ async def test_the_maintain_loop_reconnects_straight_after_a_drop(
     """That storm is the permanent connection: the lock drops idle sessions fast."""
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch.multiple(
-        "custom_components.ttlock_ble.connection",
+        "custom_components.ttlock_selfhost.connection",
         RECONNECT_INITIAL_BACKOFF=0.005,
         RECONNECT_MAX_BACKOFF=0.01,
     ):
@@ -678,7 +682,7 @@ async def test_seeding_waits_for_a_fetch_that_reached_the_lock(
 
     # Out of range: no client, so nothing was seen and nothing was seeded.
     with patch(
-        "custom_components.ttlock_ble.connection.async_ble_device_from_address",
+        "custom_components.ttlock_selfhost.connection.async_ble_device_from_address",
         return_value=None,
     ):
         assert await conn.async_get_operation_log() == []
@@ -760,7 +764,7 @@ async def test_drop_is_broadcast_immediately_and_only_once(
     mock_ttlock_client,
 ) -> None:
     """The down edge must not wait for the reconnect cooldown to elapse."""
-    from custom_components.ttlock_ble.connection import connection_signal
+    from custom_components.ttlock_selfhost.connection import connection_signal
 
     received: list[bool] = []
     async_dispatcher_connect(
@@ -791,7 +795,7 @@ async def test_get_operation_log_is_bounded(
     mock_ttlock_client,
 ) -> None:
     """The fetch holds the same lock commands need, so it has to be bounded."""
-    from custom_components.ttlock_ble.connection import MAX_LOG_ENTRIES_PER_FETCH
+    from custom_components.ttlock_selfhost.connection import MAX_LOG_ENTRIES_PER_FETCH
 
     conn = TtlockBleConnection(hass, sample_virtual_key)
     await conn.async_get_operation_log()
@@ -947,7 +951,7 @@ async def test_set_lock_sound_raises_when_out_of_range(
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with (
         patch(
-            "custom_components.ttlock_ble.connection.async_ble_device_from_address",
+            "custom_components.ttlock_selfhost.connection.async_ble_device_from_address",
             return_value=None,
         ),
         pytest.raises(TTLockError),
@@ -1233,7 +1237,7 @@ async def test_a_session_that_came_up_is_recorded_with_its_duration(
     )
     conn = TtlockBleConnection(hass, sample_virtual_key)
     with patch(
-        "custom_components.ttlock_ble.connection.time.monotonic",
+        "custom_components.ttlock_selfhost.connection.time.monotonic",
         side_effect=[100.0, 101.25],
     ):
         await conn.async_query_state()
@@ -1291,4 +1295,7 @@ async def test_a_reused_session_is_not_counted_again(
 
 
 def test_quality_signal_lowercases_mac() -> None:
-    assert quality_signal("AA:BB:CC:DD:EE:FF") == "ttlock_ble_quality_aa:bb:cc:dd:ee:ff"
+    assert (
+        quality_signal("AA:BB:CC:DD:EE:FF")
+        == "ttlock_selfhost_quality_aa:bb:cc:dd:ee:ff"
+    )
