@@ -33,6 +33,14 @@ HACS → Custom repositories → `https://github.com/constantini-ha/ttlock-selfh
 | Cards, fingerprints | what the lock listed | names and validity |
 | eKeys | no | list |
 
+## Dashboard card
+
+```yaml
+type: custom:ttlock-selfhost-doors-card
+```
+
+One animated door per lock. Tapping a locked door asks before opening; tapping an open one locks it at once. Optional: `title`, and `entities` to pick the locks.
+
 ## Development
 
 ```bash

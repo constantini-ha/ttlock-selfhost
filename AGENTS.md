@@ -27,6 +27,13 @@ Read `CLAUDE.md` and `CODE_STYLE.md` first: they are the base project's (roquero
 - A custom passcode goes over Bluetooth first (needs an admin key) and is then reported to the cloud with `addType=1` so the app lists it; out of range it goes through the gateway with `addType=2`. Generated passcodes come from the cloud and need no gateway hardware.
 - Schemas use `probatio as vol`, like the rest of the project.
 
+## Dashboard card
+
+- `frontend/ttlock-selfhost-doors-card.js` (`custom:ttlock-selfhost-doors-card`), loaded with `add_extra_js_url` next to the panel. No config lists every lock of the integration; `entities` and `title` are optional.
+- It reads only `hass.states`, `hass.entities` and `hass.devices`, never the admin-only websocket commands, so non-admin users of a dashboard can use it.
+- Owner's rule (22/11/2026): **opening asks for confirmation, locking does not.** The confirmation is a native `<dialog>` appended to `<body>` so no card transform clips it.
+- The door is inline SVG; the leaf swings with `scaleX` + `skewY` on its hinge (CSS 3D on SVG groups is unreliable). Honour `prefers-reduced-motion`.
+
 ## Checks
 
 ```bash

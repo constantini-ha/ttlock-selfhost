@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from .gateway import TtlockBleGateway
 
 PANEL_FILE = "ttlock-selfhost-panel.js"
+CARD_FILE = "ttlock-selfhost-doors-card.js"
 PANEL_URL_PATH = "ttlock-selfhost"
 FRONTEND_URL = f"/{DOMAIN}/frontend"
 READY_FLAG = f"{DOMAIN}_panel"
@@ -121,6 +122,12 @@ async def async_setup_panel(hass: HomeAssistant) -> None:
             )
         ]
     )
+    if "frontend" in hass.config.components:
+        from homeassistant.components.frontend import (  # noqa: PLC0415
+            add_extra_js_url,
+        )
+
+        add_extra_js_url(hass, f"{base}/{CARD_FILE}")
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="ttlock-selfhost-panel",

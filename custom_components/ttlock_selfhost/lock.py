@@ -353,10 +353,12 @@ class TtlockBleLock(TtlockBleEntity, LockEntity):
                 if not moving:
                     self._clear_in_flight()
                 self._write_state_if_added()
-        self._async_create_tracked_task(
-            self._async_fetch_log_after_command(),
-            "fetch_log_after_command",
-        )
+        # A command that went through the gateway left no Bluetooth session to read.
+        if self._attr_extra_state_attributes["last_route"] == ROUTE_BLUETOOTH:
+            self._async_create_tracked_task(
+                self._async_fetch_log_after_command(),
+                "fetch_log_after_command",
+            )
         self._async_create_tracked_task(
             self.coordinator.async_request_refresh(),
             "refresh_after_command",
