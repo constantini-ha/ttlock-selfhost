@@ -16,10 +16,18 @@ from homeassistant.util import dt as dt_util
 from ttlock_ble import LockState, TTLockError
 
 from .connection import event_signal, state_signal
-from .const import DOMAIN, LOGGER
+from .const import (
+    CONF_ROUTE,
+    DOMAIN,
+    LOGGER,
+    ROUTE_AUTO,
+    ROUTE_BLUETOOTH,
+    ROUTE_GATEWAY,
+)
 from .data import TtlockBleIssuedCommand
 from .entity import TtlockBleEntity
 from .lock_command import TtlockBleLockCommand
+from .openapi import TtlockOpenApiError
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine
@@ -34,6 +42,7 @@ if TYPE_CHECKING:
     from .connection import TtlockBleConnection
     from .coordinator import TtlockBleDataUpdateCoordinator
     from .data import TtlockBleConfigEntry
+    from .gateway import TtlockBleGateway
 
 
 # Upper bound on a command's settle window. The window normally ends
@@ -61,6 +70,8 @@ async def async_setup_entry(
             key,
             data.connections[key.lockMac],
             data.command_journal,
+            gateway=data.gateway,
+            route=entry.options.get(CONF_ROUTE, ROUTE_AUTO),
         )
         for key in data.virtual_keys
     )
@@ -115,17 +126,23 @@ class TtlockBleLock(TtlockBleEntity, LockEntity):
 
     _attr_translation_key = "lock"
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         coordinator: TtlockBleDataUpdateCoordinator,
         key: VirtualKey,
         connection: TtlockBleConnection,
         command_journal: TtlockBleCommandJournal,
+        *,
+        gateway: TtlockBleGateway | None = None,
+        route: str = ROUTE_AUTO,
     ) -> None:
         """Bind the entity to its connection + coordinator + key."""
         super().__init__(coordinator, key)
         self._connection = connection
         self._command_journal = command_journal
+        self._gateway = gateway
+        self._route = route
+        self._attr_extra_state_attributes = {"last_route": None}
         self._attr_is_locked = None
         self._attr_is_locking = False
         self._attr_is_unlocking = False
@@ -301,13 +318,10 @@ class TtlockBleLock(TtlockBleEntity, LockEntity):
             moving = False
             started_at = dt_util.now().replace(tzinfo=None)
             try:
-                if action is TtlockBleLockCommand.LOCK:
-                    await self._connection.async_lock()
-                else:
-                    await self._connection.async_unlock()
+                await self._async_send(action)
             except TTLockError as exc:
                 LOGGER.warning(
-                    "BLE %s failed for %s: %s",
+                    "%s failed for %s: %s",
                     action,
                     self._key.lockMac,
                     exc,
@@ -347,6 +361,42 @@ class TtlockBleLock(TtlockBleEntity, LockEntity):
             self.coordinator.async_request_refresh(),
             "refresh_after_command",
         )
+
+    async def _async_send(self, action: TtlockBleLockCommand) -> None:
+        """
+        Send over Bluetooth, falling back to the gateway when one reaches the lock.
+
+        Bluetooth goes first because it stays inside the house; the gateway
+        route crosses TTLock's cloud. A cloud refusal is raised as the
+        `TTLockError` the caller already handles.
+        """
+        gateway = self._gateway
+        if gateway is not None and not gateway.reaches(self._key.lockMac):
+            gateway = None
+        if self._route != ROUTE_GATEWAY or gateway is None:
+            try:
+                if action is TtlockBleLockCommand.LOCK:
+                    await self._connection.async_lock()
+                else:
+                    await self._connection.async_unlock()
+            except TTLockError as exc:
+                if self._route == ROUTE_BLUETOOTH or gateway is None:
+                    raise
+                LOGGER.info(
+                    "Bluetooth %s failed for %s (%s); trying the gateway",
+                    action,
+                    self._key.lockMac,
+                    exc,
+                )
+            else:
+                self._attr_extra_state_attributes = {"last_route": ROUTE_BLUETOOTH}
+                return
+        try:
+            await gateway.async_command(self._key, action)
+        except TtlockOpenApiError as exc:
+            msg = f"gateway: {exc}"
+            raise TTLockError(msg) from exc
+        self._attr_extra_state_attributes = {"last_route": ROUTE_GATEWAY}
 
     async def _async_calling_user_name(self) -> str | None:
         """Return the name of the user whose service call is being served."""
@@ -430,6 +480,8 @@ class TtlockBleLock(TtlockBleEntity, LockEntity):
                 "Forced query for %s returned no state",
                 self._key.lockMac,
             )
+            if self._gateway is not None and self._gateway.reaches(self._key.lockMac):
+                await self._gateway.async_read_state(self._key)
             return
         raw_state, _battery = result
         if raw_state is not None:

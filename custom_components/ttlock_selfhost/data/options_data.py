@@ -9,3 +9,4 @@ class TtlockBleOptionsData(TypedDict, total=False):
     """Shape of the options writable by the options flow."""
 
     permanent_connection: NotRequired[bool]
+    route: NotRequired[str]

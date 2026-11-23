@@ -8,14 +8,6 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from ttlock_ble import (
-    CardEntry,
-    FingerprintEntry,
-    KeyboardPwdType,
-    LogEntry,
-    LogOperate,
-    PasscodeEntry,
-)
 
 from custom_components.ttlock_selfhost.connection import log_signal
 from custom_components.ttlock_selfhost.const import DOMAIN
@@ -24,6 +16,14 @@ from custom_components.ttlock_selfhost.credential_store import (
 )
 from custom_components.ttlock_selfhost.credential_type import TtlockBleCredentialType
 from custom_components.ttlock_selfhost.data import TtlockBleKnownCredential
+from ttlock_ble import (
+    CardEntry,
+    FingerprintEntry,
+    KeyboardPwdType,
+    LogEntry,
+    LogOperate,
+    PasscodeEntry,
+)
 
 MAC = "AA:BB:CC:DD:EE:FF"
 

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
+
 from ttlock_ble import LockSound, TTLockError
 
 

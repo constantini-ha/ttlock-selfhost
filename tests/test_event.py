@@ -4,10 +4,10 @@ import datetime as dt
 
 import pytest
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from ttlock_ble import LogEntry, LogOperate
 
 from custom_components.ttlock_selfhost.connection import log_signal
 from custom_components.ttlock_selfhost.event import _classify_record, _record_type_name
+from ttlock_ble import LogEntry, LogOperate
 
 
 def _log_state(hass):
@@ -162,8 +162,6 @@ def test_every_record_type_is_deliberately_classified() -> None:
     enum, so a type added to the SDK later fails here until someone has
     decided what it means rather than silently becoming `other`.
     """
-    from ttlock_ble import LogOperate
-
     from custom_components.ttlock_selfhost.event import (
         LOCK_RECORD_TYPES,
         PASSWORD_CHANGE_RECORD_TYPES,
@@ -171,6 +169,7 @@ def test_every_record_type_is_deliberately_classified() -> None:
         UNLOCK_FAILED_RECORD_TYPES,
         UNLOCK_RECORD_TYPES,
     )
+    from ttlock_ble import LogOperate
 
     accounted = (
         UNLOCK_RECORD_TYPES
@@ -206,12 +205,11 @@ def test_the_buckets_do_not_overlap() -> None:
 
 def test_a_passcode_carrying_record_never_leaks_its_code() -> None:
     """Newly classified types must not have widened what reaches an attribute."""
-    from ttlock_ble import LogOperate
-
     from custom_components.ttlock_selfhost.credential_resolver import (
         PASSCODE_RECORD_TYPES,
     )
     from custom_components.ttlock_selfhost.event import UNLOCK_RECORD_TYPES
+    from ttlock_ble import LogOperate
 
     assert LogOperate.ADMIN_CODE_UNLOCK in PASSCODE_RECORD_TYPES
     assert LogOperate.DOUBLE_CHECK_PASSCODE_UNLOCK in PASSCODE_RECORD_TYPES
@@ -477,3 +475,31 @@ async def test_a_lock_sent_by_a_user_names_them_on_the_record(
     assert (
         _log_state(hass).attributes["credential_name"] == "Alice (via Home Assistant)"
     )
+
+
+async def test_log_entry_is_kept_in_the_history_without_the_code(
+    hass,
+    setup_integration,
+    sample_virtual_key,
+) -> None:
+    from custom_components.ttlock_selfhost.history_store import (
+        async_get_history_store,
+    )
+
+    async_dispatcher_send(
+        hass,
+        log_signal(sample_virtual_key.lockMac),
+        LogEntry(
+            record_number=1,
+            record_type=4,
+            operate_date=dt.datetime(2026, 5, 17, 10, 0, 0),  # noqa: DTZ001
+            lock_battery=85,
+            uid=1234,
+            password="123456",
+        ),
+    )
+    await hass.async_block_till_done()
+    history = await async_get_history_store(hass)
+    (record,) = history.recent(sample_virtual_key.lockMac)
+    assert record["type"] == "unlock"
+    assert "123456" not in str(record)

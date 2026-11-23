@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from ttlock_ble import DeviceInfo, VirtualKey
-from ttlock_ble.models.lock_version import LockVersion
 
 # Eagerly import the integration submodules so `unittest.mock.patch` can
 # resolve dotted targets like `custom_components.ttlock_selfhost.api.TTLockCloud`
@@ -21,6 +19,8 @@ import custom_components.ttlock_selfhost.lock  # noqa: F401
 from custom_components.ttlock_selfhost.connection_quality import (
     TtlockBleConnectionQuality,
 )
+from ttlock_ble import DeviceInfo, VirtualKey
+from ttlock_ble.models.lock_version import LockVersion
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -228,6 +228,76 @@ async def setup_integration(
     )
     await hass.async_block_till_done()
     return entry
+
+
+GATEWAY = {
+    "client_id": "cid",
+    "client_secret": "sec",
+    "region": "eu",
+    "token": {"access_token": "a", "refresh_token": "r", "expires_at": 9e12},
+}
+
+
+@pytest.fixture
+def mock_api(sample_virtual_key):
+    with patch("custom_components.ttlock_selfhost.gateway.TtlockOpenApi") as cls:
+        api = MagicMock(name="TtlockOpenApi")
+        api.async_locks = AsyncMock(
+            return_value=[
+                {
+                    "lockId": sample_virtual_key.lockId,
+                    "hasGateway": 1,
+                    "electricQuantity": 55,
+                }
+            ]
+        )
+        api.async_gateways_of = AsyncMock(
+            return_value=[{"gatewayName": "G2", "rssi": -60}]
+        )
+        api.async_open_state = AsyncMock(return_value=True)
+        api.async_lock = AsyncMock()
+        api.async_unlock = AsyncMock()
+        cls.return_value = api
+        api.cls = cls
+        yield api
+
+
+@pytest.fixture
+def gateway_entry(
+    hass,
+    enable_bluetooth,
+    enable_custom_integrations,
+    sample_stored_key,
+    mock_cloud,
+    mock_ttlock_connection,
+    mock_api,
+):
+    async def _setup(route: str | None = None):
+        from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ttlock_selfhost.const import (
+            CONF_GATEWAY,
+            CONF_ROUTE,
+            DOMAIN,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                "username": "user@example.com",
+                "password": "pass",
+                "keys": [sample_stored_key],
+                CONF_GATEWAY: GATEWAY,
+            },
+            options={} if route is None else {CONF_ROUTE: route},
+            unique_id="user_example_com",
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        return entry
+
+    return _setup
 
 
 def lock_advertisement(*, locked: bool, battery: int, dormant: bool = False):

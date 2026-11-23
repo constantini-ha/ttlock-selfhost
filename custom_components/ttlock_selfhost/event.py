@@ -8,7 +8,7 @@ connects or polls.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from homeassistant.components.event import EventEntity
 from homeassistant.core import callback
@@ -20,6 +20,7 @@ from .connection import log_signal
 from .credential_resolver import TtlockBleCredentialResolver
 from .credential_store import async_get_credential_store
 from .entity import TtlockBleEntity
+from .history_store import async_get_history_store
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
 
     from .coordinator import TtlockBleDataUpdateCoordinator
     from .data import TtlockBleConfigEntry, TtlockBleLogEventAttributes
+    from .history_store import TtlockBleHistoryRecord, TtlockBleHistoryStore
 
 
 LOG_EVENT_TYPES: list[str] = [
@@ -51,8 +53,10 @@ async def async_setup_entry(
         await async_get_credential_store(hass),
         data.command_journal,
     )
+    history = await async_get_history_store(hass)
     async_add_entities(
-        TtlockBleLogEvent(data.coordinator, key, resolver) for key in data.virtual_keys
+        TtlockBleLogEvent(data.coordinator, key, resolver, history)
+        for key in data.virtual_keys
     )
 
 
@@ -226,10 +230,12 @@ class TtlockBleLogEvent(TtlockBleEntity, EventEntity):
         coordinator: TtlockBleDataUpdateCoordinator,
         key: VirtualKey,
         resolver: TtlockBleCredentialResolver,
+        history: TtlockBleHistoryStore | None = None,
     ) -> None:
         """Bind to the lock and to what names the credentials of its records."""
         super().__init__(coordinator, key)
         self._resolver = resolver
+        self._history = history
 
     @property
     def unique_id(self) -> str:
@@ -270,5 +276,10 @@ class TtlockBleLogEvent(TtlockBleEntity, EventEntity):
             attributes["key_id"] = entry.key_id
         if entry.accessory_battery is not None:
             attributes["accessory_battery"] = entry.accessory_battery
+        if self._history is not None:
+            self._history.async_add(
+                self._key.lockMac,
+                cast("TtlockBleHistoryRecord", {"type": event_type, **attributes}),
+            )
         self._trigger_event(event_type, dict(attributes))
         self.async_write_ha_state()

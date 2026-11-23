@@ -21,11 +21,13 @@ from .advertisement import TtlockBleAdvertisementTracker
 from .clock_sync_store import async_get_clock_sync_store
 from .command_journal import TtlockBleCommandJournal
 from .connection import TtlockBleConnection
-from .const import CONF_PERMANENT_CONNECTION, DOMAIN, LOGGER
+from .const import CONF_GATEWAY, CONF_PERMANENT_CONNECTION, DOMAIN, LOGGER
 from .coordinator import TtlockBleDataUpdateCoordinator
 from .credential_store import async_get_credential_store
 from .data import TtlockBleData, TtlockBleLogCursor
 from .device_description_store import async_get_device_description_store
+from .gateway import TtlockBleGateway
+from .panel import async_setup_panel
 from .passcode_ledger import TtlockBlePasscodeLedger
 from .record_store import async_get_record_store
 
@@ -163,6 +165,11 @@ async def async_setup_entry(
     # No refresh at setup: it would open a BLE session for a reading the
     # lock hands out for free the next time it advertises awake. Until
     # then the entities report unknown, which is what is actually known.
+    gateway = (
+        TtlockBleGateway(hass, entry, coordinator, virtual_keys)
+        if CONF_GATEWAY in config
+        else None
+    )
     entry.runtime_data = TtlockBleData(
         keys=stored_keys,
         virtual_keys=virtual_keys,
@@ -170,7 +177,11 @@ async def async_setup_entry(
         coordinator=coordinator,
         bluetooth_unsubs=bluetooth_unsubs,
         command_journal=TtlockBleCommandJournal(),
+        gateway=gateway,
     )
+    if gateway is not None:
+        entry.async_on_unload(gateway.async_start())
+    await async_setup_panel(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     for unsubscribe in passcode_ledger.async_track_forgetting(virtual_keys):
@@ -197,5 +208,8 @@ async def async_reload_entry(
     hass: HomeAssistant,
     entry: TtlockBleConfigEntry,
 ) -> None:
-    """Reload config entry."""
+    """Reload config entry, unless only the gateway session was renewed."""
+    gateway = entry.runtime_data.gateway
+    if gateway is not None and gateway.async_consume_token_update():
+        return
     await hass.config_entries.async_reload(entry.entry_id)

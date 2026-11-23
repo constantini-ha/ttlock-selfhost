@@ -22,13 +22,14 @@ from typing import TYPE_CHECKING
 from homeassistant.components.bluetooth import async_ble_device_from_address
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from ttlock_ble import TTLockClient, TTLockError
+from ttlock_ble import KeyboardPwdType, TTLockClient, TTLockError
 
 from .connection_quality import TtlockBleConnectionQuality
 from .const import DOMAIN, LOGGER
 from .data import TtlockBleLogCursor
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
     from datetime import datetime
 
     from bleak import BleakClient
@@ -456,7 +457,48 @@ class TtlockBleConnection:
                 )
         return new_entries
 
+    async def async_add_passcode(
+        self, code: str, *, start: str | None = None, end: str | None = None
+    ) -> None:
+        """Write a keypad passcode; `start`/`end` (YYMMDDHHmm) make it timed."""
+
+        async def send(client: TTLockClient) -> None:
+            if start is None or end is None:
+                await client.add_passcode(code)
+            else:
+                await client.add_passcode(
+                    code,
+                    pwd_type=KeyboardPwdType.PERIOD,
+                    start_date=start,
+                    end_date=end,
+                )
+
+        await self._async_run("add a passcode", send)
+
+    async def async_delete_passcode(self, code: str) -> None:
+        """Remove a keypad passcode from the lock."""
+
+        async def send(client: TTLockClient) -> None:
+            await client.delete_passcode(code)
+
+        await self._async_run("delete a passcode", send)
+
     async def _async_run_command(self, action: str) -> None:
+        """Send lock, unlock or a sound setting."""
+
+        async def send(client: TTLockClient) -> None:
+            if action == "lock":
+                await client.lock()
+            elif action == "unlock":
+                await client.unlock()
+            else:
+                await client.set_lock_sound(enabled=action == "sound_on")
+
+        await self._async_run(action, send)
+
+    async def _async_run(
+        self, action: str, send: Callable[[TTLockClient], Awaitable[None]]
+    ) -> None:
         """
         Acquire the lock, ensure connected, then run one command on it.
 
@@ -475,12 +517,7 @@ class TtlockBleConnection:
                 msg = f"Lock {self._key.lockMac} not reachable via Bluetooth"
                 raise TTLockError(msg)
             try:
-                if action == "lock":
-                    await client.lock()
-                elif action == "unlock":
-                    await client.unlock()
-                else:
-                    await client.set_lock_sound(enabled=action == "sound_on")
+                await send(client)
             except TTLockError:
                 await self._async_disconnect_locked()
                 raise

@@ -10,14 +10,6 @@ import pytest
 from bleak import BleakError
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from ttlock_ble import (
-    DeviceInfo,
-    FingerprintEntry,
-    LockEvent,
-    LockSound,
-    LockState,
-    TTLockError,
-)
 
 from custom_components.ttlock_selfhost.connection import (
     TtlockBleConnection,
@@ -28,6 +20,14 @@ from custom_components.ttlock_selfhost.connection import (
     state_signal,
 )
 from custom_components.ttlock_selfhost.data import TtlockBleLogCursor
+from ttlock_ble import (
+    DeviceInfo,
+    FingerprintEntry,
+    LockEvent,
+    LockSound,
+    LockState,
+    TTLockError,
+)
 
 
 def _log_entry(record_number: int) -> SimpleNamespace:
@@ -1299,3 +1299,27 @@ def test_quality_signal_lowercases_mac() -> None:
         quality_signal("AA:BB:CC:DD:EE:FF")
         == "ttlock_selfhost_quality_aa:bb:cc:dd:ee:ff"
     )
+
+
+async def test_passcodes_are_written_and_removed_over_the_connection(
+    hass,
+    sample_virtual_key,
+    mock_ble_resolver,
+    mock_ttlock_client,
+) -> None:
+    from ttlock_ble import KeyboardPwdType
+
+    mock_ttlock_client.add_passcode = AsyncMock()
+    mock_ttlock_client.delete_passcode = AsyncMock()
+    conn = TtlockBleConnection(hass, sample_virtual_key)
+    await conn.async_add_passcode("1234")
+    mock_ttlock_client.add_passcode.assert_awaited_once_with("1234")
+    await conn.async_add_passcode("5678", start="2611230900", end="2611231800")
+    mock_ttlock_client.add_passcode.assert_awaited_with(
+        "5678",
+        pwd_type=KeyboardPwdType.PERIOD,
+        start_date="2611230900",
+        end_date="2611231800",
+    )
+    await conn.async_delete_passcode("1234")
+    mock_ttlock_client.delete_passcode.assert_awaited_once_with("1234")

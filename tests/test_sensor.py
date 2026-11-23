@@ -142,9 +142,9 @@ async def test_battery_sensor_updates_from_push_event(
 ) -> None:
     """A push event carrying `battery` updates the sensor without polling."""
     from homeassistant.helpers.dispatcher import async_dispatcher_send
-    from ttlock_ble import LockEvent
 
     from custom_components.ttlock_selfhost.connection import event_signal
+    from ttlock_ble import LockEvent
 
     state = _battery_state(hass)
     assert state.state == "80"
@@ -165,9 +165,9 @@ async def test_battery_sensor_ignores_push_event_without_battery(
 ) -> None:
     """An event with no decoded battery byte must not clobber the last value."""
     from homeassistant.helpers.dispatcher import async_dispatcher_send
-    from ttlock_ble import LockEvent
 
     from custom_components.ttlock_selfhost.connection import event_signal
+    from ttlock_ble import LockEvent
 
     state = _battery_state(hass)
     assert state.state == "80"
@@ -235,9 +235,9 @@ async def test_battery_sensor_follows_a_pushed_rise_over_an_advertisement(
     sample_virtual_key,
 ) -> None:
     from homeassistant.helpers.dispatcher import async_dispatcher_send
-    from ttlock_ble import LockEvent
 
     from custom_components.ttlock_selfhost.connection import event_signal
+    from ttlock_ble import LockEvent
 
     state = _battery_state(hass)
     _publish_battery(setup_integration, sample_virtual_key.lockMac, 70, advertised=True)
@@ -553,9 +553,9 @@ async def _record(hass, mac, record_type, *, minute=0, **fields) -> None:
     import datetime as dt
 
     from homeassistant.helpers.dispatcher import async_dispatcher_send
-    from ttlock_ble import LogEntry
 
     from custom_components.ttlock_selfhost.connection import log_signal
+    from ttlock_ble import LogEntry
 
     async_dispatcher_send(
         hass,
@@ -797,9 +797,9 @@ async def test_last_unlocked_by_takes_an_undated_unlock(
     hass, setup_integration, sample_virtual_key
 ) -> None:
     from homeassistant.helpers.dispatcher import async_dispatcher_send
-    from ttlock_ble import LogEntry, LogOperate
 
     from custom_components.ttlock_selfhost.connection import log_signal
+    from ttlock_ble import LogEntry, LogOperate
 
     await _record(
         hass,

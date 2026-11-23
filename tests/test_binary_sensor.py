@@ -264,6 +264,7 @@ async def test_door_binary_sensor_removed_entity_ignores_later_records(
     sample_virtual_key,
 ) -> None:
     from homeassistant.helpers import entity_registry as er
+
     from ttlock_ble import LogOperate
 
     signal = log_signal(sample_virtual_key.lockMac)

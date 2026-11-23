@@ -253,6 +253,39 @@ class TtlockBleDataUpdateCoordinator(DataUpdateCoordinator["TtlockBleCoordinator
         self.async_note_lock_seen(mac)
 
     @callback
+    def async_state_age(self, mac: str) -> float:
+        """Return the seconds since the bolt of `mac` was last read, inf if never."""
+        observed_at = ((self.data or {}).get(mac) or {}).get("observed_at")
+        if observed_at is None or not self.async_has_state(mac):
+            return float("inf")
+        return time.monotonic() - observed_at
+
+    @callback
+    def async_apply_cloud_state(
+        self,
+        mac: str,
+        *,
+        locked: bool | None = None,
+        battery: int | None = None,
+    ) -> None:
+        """
+        Publish what the gateway route reported for `mac`.
+
+        The cloud's battery is the last one an app or gateway uploaded, so
+        it only fills in for a lock Bluetooth has not read yet.
+        """
+        previous = (self.data or {}).get(mac) or {}
+        snapshot: TtlockBleLockState = {**previous}
+        if locked is not None:
+            snapshot["locked"] = locked
+            snapshot["observed_at"] = time.monotonic()
+        if battery is not None and previous.get("battery_level") is None:
+            snapshot["battery_level"] = battery
+        if snapshot == previous:
+            return
+        self.async_set_updated_data({**(self.data or {}), mac: snapshot})
+
+    @callback
     def async_note_lock_seen(self, mac: str) -> None:
         """
         Read the bolt position over BLE while nothing has reported one.

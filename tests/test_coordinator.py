@@ -7,15 +7,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.util import dt as dt_util
-from ttlock_ble import (
-    CardEntry,
-    DeviceInfo,
-    FingerprintEntry,
-    KeyboardPwdType,
-    LockFeature,
-    LockSound,
-    PasscodeEntry,
-)
 
 from custom_components.ttlock_selfhost.clock_sync_store import TtlockBleClockSyncStore
 from custom_components.ttlock_selfhost.coordinator import (
@@ -31,6 +22,15 @@ from custom_components.ttlock_selfhost.credential_type import TtlockBleCredentia
 from custom_components.ttlock_selfhost.data import TtlockBleKnownCredential
 from custom_components.ttlock_selfhost.device_description_store import (
     TtlockBleDeviceDescriptionStore,
+)
+from ttlock_ble import (
+    CardEntry,
+    DeviceInfo,
+    FingerprintEntry,
+    KeyboardPwdType,
+    LockFeature,
+    LockSound,
+    PasscodeEntry,
 )
 
 

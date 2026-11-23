@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..command_journal import TtlockBleCommandJournal
     from ..connection import TtlockBleConnection
     from ..coordinator import TtlockBleDataUpdateCoordinator
+    from ..gateway import TtlockBleGateway
     from .stored_key import TtlockBleStoredKey
 
 
@@ -26,3 +27,4 @@ class TtlockBleData:
     coordinator: TtlockBleDataUpdateCoordinator
     bluetooth_unsubs: list[CALLBACK_TYPE]
     command_journal: TtlockBleCommandJournal
+    gateway: TtlockBleGateway | None = None

@@ -1,6 +1,4 @@
 {
-    "name": "TTLock BLE",
-    "zip_release": true,
-    "filename": "ttlock_selfhost.zip",
+    "name": "TTLock Selfhost",
     "homeassistant": "2026.10.0"
 }

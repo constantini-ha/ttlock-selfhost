@@ -1,6 +1,11 @@
 {
   "domain": "ttlock_selfhost",
-  "name": "TTLock BLE",
+  "name": "TTLock Selfhost",
+  "after_dependencies": [
+    "frontend",
+    "http",
+    "panel_custom"
+  ],
   "bluetooth": [
     {
       "connectable": false,
@@ -8,17 +13,17 @@
     }
   ],
   "codeowners": [
-    "@roquerodrigo"
+    "@Constantini21"
   ],
   "config_flow": true,
   "dependencies": [
     "bluetooth"
   ],
-  "documentation": "https://github.com/roquerodrigo/ha-ttlock-ble",
+  "documentation": "https://github.com/constantini-ha/ttlock-selfhost",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/roquerodrigo/ha-ttlock-ble/issues",
+  "issue_tracker": "https://github.com/constantini-ha/ttlock-selfhost/issues",
   "requirements": [
     "ttlock-ble==0.3.5"
   ],
-  "version": "3.13.0"
+  "version": "2026.11.1"
 }

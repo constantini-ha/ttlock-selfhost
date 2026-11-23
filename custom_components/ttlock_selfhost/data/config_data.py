@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
+    from ..openapi import TtlockBleGatewayConfig
     from .stored_key import TtlockBleStoredKey
 
 
@@ -23,3 +24,4 @@ class TtlockBleConfigData(TypedDict):
     password: NotRequired[str]
     cloud_app: NotRequired[str]
     keys: list[TtlockBleStoredKey]
+    gateway: NotRequired[TtlockBleGatewayConfig]
