@@ -149,32 +149,6 @@ const STYLE = `
     width: 100%; box-sizing: border-box; }
   button.row:hover, button.row:focus-visible { background: var(--tt-blue-soft); }
   .mono { font-family: ui-monospace, "Roboto Mono", monospace; letter-spacing: 1px; }
-  .ghost { all: unset; cursor: pointer; color: var(--tt-blue); padding: 8px; border-radius: 8px;
-    display: inline-grid; place-items: center; font-size: 14px; }
-  .ghost:hover, .ghost:focus-visible { background: var(--tt-blue-soft); }
-  .ghost.danger { color: var(--error-color, #d93025); }
-  .note { color: var(--secondary-text-color); font-size: 13px; line-height: 1.45; margin: 0 4px 14px; }
-  .day { color: var(--secondary-text-color); font-size: 13px; margin: 14px 4px 6px; }
-  .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px;
-    background: var(--card-background-color, #fff); padding: 4px; border-radius: 10px; margin-bottom: 16px; }
-  .tabs button { all: unset; cursor: pointer; text-align: center; padding: 9px 2px; border-radius: 8px;
-    font-size: 13px; }
-  .tabs button[aria-selected="true"] { background: var(--tt-blue); color: #fff; }
-  .tabs button:disabled { opacity: 0.4; cursor: default; }
-  label.field { display: block; padding: 10px 16px; border-bottom: 1px solid var(--tt-line); }
-  label.field span { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; }
-  label.field input, label.field select { width: 100%; border: 0; outline: 0; background: transparent;
-    color: inherit; font: inherit; font-size: 16px; padding: 4px 0; color-scheme: light dark; }
-  label.check { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
-  .primary { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
-    text-align: center; background: var(--tt-blue); color: #fff; border-radius: 26px;
-    padding: 14px; font-size: 16px; font-weight: 500; }
-  .primary:disabled { opacity: 0.5; cursor: default; }
-  .primary:focus-visible { outline: 3px solid var(--tt-blue); outline-offset: 3px; }
-  .ghost { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
-    text-align: center; color: var(--tt-blue); border: 1px solid currentColor; border-radius: 26px;
-    padding: 13px; font-size: 16px; font-weight: 500; margin-top: 12px; }
-  .ghost:focus-visible { outline: 3px solid var(--tt-blue); outline-offset: 3px; }
   .secondary { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
     text-align: center; color: var(--error-color, #d93025); padding: 14px; font-size: 15px; }
   .big-code { text-align: center; font-size: 34px; padding: 22px 8px 6px; }
@@ -438,7 +412,17 @@ class TtlockSelfhostPanel extends HTMLElement {
             { "aria-label": this._t("new_passcode"), onclick: () => this._go("new_passcode") },
             icon("mdi:plus")
           )
-        : h("span");
+        : view === "home"
+          ? h(
+              "button",
+              {
+                "aria-label": this._t("to_dashboard"),
+                title: this._t("to_dashboard"),
+                onclick: () => this._toDashboard(lock),
+              },
+              icon("mdi:view-dashboard-outline")
+            )
+          : h("span");
     const parts = [
       h("style", {}, STYLE),
       h("div", { class: "bar" }, left, h("h1", {}, title), right),
@@ -555,7 +539,6 @@ class TtlockSelfhostPanel extends HTMLElement {
           )
         )
       ),
-      h("button", { class: "ghost", onclick: () => this._toDashboard(lock) }, this._t("to_dashboard")),
     ];
   }
 
