@@ -3,7 +3,7 @@
     "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "Set up TTLock BLE",
+        "title": "Set up TTLock Selfhost",
         "description": "Choose how this Home Assistant gets the keys for your locks.",
         "menu_options": {
           "cloud": "Sign in to a TTLock account",
@@ -11,7 +11,7 @@
         }
       },
       "bluetooth_confirm": {
-        "title": "Set up TTLock BLE",
+        "title": "Set up TTLock Selfhost",
         "description": "**{name}** was found over Bluetooth. Its address and protocol header are already known; what is still missing are its keys, which live either in a TTLock account or in whatever provisioned the lock locally.",
         "menu_options": {
           "cloud": "Sign in to a TTLock account",
@@ -19,7 +19,7 @@
         }
       },
       "cloud": {
-        "title": "Set up TTLock BLE",
+        "title": "Set up TTLock Selfhost",
         "description": "Enter your TTLock cloud credentials. They are used once to download the per-lock keys; after that, lock/unlock runs offline over Bluetooth.",
         "data": {
           "username": "Email",
@@ -54,7 +54,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate TTLock BLE",
+        "title": "Re-authenticate TTLock Selfhost",
         "description": "Your credentials are no longer valid. Enter the updated credentials.",
         "data": {
           "username": "Email",
@@ -62,7 +62,7 @@
         }
       },
       "reconfigure": {
-        "title": "Reconfigure TTLock BLE",
+        "title": "Reconfigure TTLock Selfhost",
         "description": "Update the credentials for this entry. Keys will be re-synced from the cloud.",
         "data": {
           "username": "Email",
@@ -110,7 +110,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "TTLock BLE options",
+        "title": "TTLock Selfhost options",
         "description": "Behaviour for this entry.",
         "data": {
           "permanent_connection": "Permanent connection"

@@ -1,6 +1,6 @@
 [project]
-name = "ha-ttlock-ble"
-version = "3.13.0"
+name = "ttlock-selfhost"
+version = "2026.11.1"
 description = "Home Assistant integration for DLock-XP / TTLock smart locks (BLE)"
 requires-python = ">=3.14.2"
 

@@ -3,7 +3,7 @@
     "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "הגדרת TTLock BLE",
+        "title": "הגדרת TTLock Selfhost",
         "description": "בחר כיצד Home Assistant יקבל את המפתחות למנעולים שלך.",
         "menu_options": {
           "cloud": "התחברות לחשבון TTLock",
@@ -11,7 +11,7 @@
         }
       },
       "bluetooth_confirm": {
-        "title": "הגדרת TTLock BLE",
+        "title": "הגדרת TTLock Selfhost",
         "description": "**{name}** נמצא דרך Bluetooth. הכתובת וכותרת הפרוטוקול שלו כבר ידועות; מה שעדיין חסר הם המפתחות שלו, שנמצאים או בחשבון TTLock או ביישום שהגדיר את המנעול באופן מקומי.",
         "menu_options": {
           "cloud": "התחברות לחשבון TTLock",
@@ -19,7 +19,7 @@
         }
       },
       "cloud": {
-        "title": "הגדרת TTLock BLE",
+        "title": "הגדרת TTLock Selfhost",
         "description": "הזן את פרטי ההתחברות שלך לענן TTLock. הם משמשים פעם אחת להורדת המפתחות לכל מנעול; לאחר מכן, פעולות נעילה/פתיחה מבוצעות באופן לא מקוון דרך Bluetooth.",
         "data": {
           "username": "דוא\"ל",
@@ -54,7 +54,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "אימות מחדש של TTLock BLE",
+        "title": "אימות מחדש של TTLock Selfhost",
         "description": "פרטי ההתחברות שלך אינם תקפים יותר. הזן את פרטי ההתחברות המעודכנים.",
         "data": {
           "username": "דוא\"ל",
@@ -62,7 +62,7 @@
         }
       },
       "reconfigure": {
-        "title": "הגדרת TTLock BLE מחדש",
+        "title": "הגדרת TTLock Selfhost מחדש",
         "description": "עדכן את פרטי ההתחברות עבור רשומה זו. המפתחות יסונכרנו מחדש מהענן.",
         "data": {
           "username": "דוא\"ל",
@@ -110,7 +110,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "אפשרויות TTLock BLE",
+        "title": "אפשרויות TTLock Selfhost",
         "description": "התנהגות עבור רשומה זו.",
         "data": {
           "permanent_connection": "חיבור קבוע"

@@ -3,7 +3,7 @@
     "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "Configurar TTLock BLE",
+        "title": "Configurar TTLock Selfhost",
         "description": "Escolha como este Home Assistant obtém as chaves das suas fechaduras.",
         "menu_options": {
           "cloud": "Entrar com uma conta TTLock",
@@ -11,7 +11,7 @@
         }
       },
       "bluetooth_confirm": {
-        "title": "Configurar TTLock BLE",
+        "title": "Configurar TTLock Selfhost",
         "description": "**{name}** foi encontrada por Bluetooth. O endereço e o cabeçalho de protocolo já são conhecidos; faltam as chaves, que ficam em uma conta TTLock ou no que tiver inicializado a fechadura localmente.",
         "menu_options": {
           "cloud": "Entrar em uma conta TTLock",
@@ -19,7 +19,7 @@
         }
       },
       "cloud": {
-        "title": "Configurar TTLock BLE",
+        "title": "Configurar TTLock Selfhost",
         "description": "Informe suas credenciais do TTLock cloud. Elas são usadas uma única vez para baixar as chaves das fechaduras; depois disso, trancar/destrancar roda offline via Bluetooth.",
         "data": {
           "username": "Email",
@@ -54,7 +54,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "Re-autenticar TTLock BLE",
+        "title": "Re-autenticar TTLock Selfhost",
         "description": "Suas credenciais não são mais válidas. Informe as credenciais atualizadas.",
         "data": {
           "username": "Email",
@@ -62,7 +62,7 @@
         }
       },
       "reconfigure": {
-        "title": "Reconfigurar TTLock BLE",
+        "title": "Reconfigurar TTLock Selfhost",
         "description": "Atualize as credenciais desta entrada. As chaves serão re-sincronizadas do cloud.",
         "data": {
           "username": "Email",
@@ -110,7 +110,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Opções do TTLock BLE",
+        "title": "Opções do TTLock Selfhost",
         "description": "Comportamento desta entrada.",
         "data": {
           "permanent_connection": "Conexão permanente"

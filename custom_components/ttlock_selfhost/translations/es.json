@@ -1,0 +1,221 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Configurar TTLock Selfhost",
+        "description": "Elige cómo obtiene este Home Assistant las llaves de tus cerraduras.",
+        "menu_options": {
+          "cloud": "Iniciar sesión en una cuenta TTLock",
+          "manual": "Introducir la llave de una cerradura a mano"
+        }
+      },
+      "bluetooth_confirm": {
+        "title": "Configurar TTLock Selfhost",
+        "description": "Se encontró **{name}** por Bluetooth. Ya se conocen su dirección y su cabecera de protocolo; faltan sus llaves, que están en una cuenta TTLock o en lo que haya inicializado la cerradura localmente.",
+        "menu_options": {
+          "cloud": "Iniciar sesión en una cuenta TTLock",
+          "manual": "Introducir la llave de esta cerradura a mano"
+        }
+      },
+      "cloud": {
+        "title": "Configurar TTLock Selfhost",
+        "description": "Introduce tus credenciales de la nube TTLock. Se usan una vez para descargar las llaves de cada cerradura; después, abrir y cerrar funciona sin conexión, por Bluetooth.",
+        "data": {
+          "username": "Correo",
+          "password": "Contraseña",
+          "cloud_app": "Aplicación"
+        },
+        "data_description": {
+          "cloud_app": "La aplicación basada en TTLock donde se creó tu cuenta. Las cuentas son independientes por aplicación, incluso con el mismo correo."
+        }
+      },
+      "manual": {
+        "title": "Introducir la llave de una cerradura a mano",
+        "description": "Para una cerradura inicializada fuera de la nube TTLock. Introduce los valores que produjo tu instalación local; se guardan en esta entrada y se usan directamente por Bluetooth, sin ninguna cuenta. La clave AES admite hexadecimal continuo o bytes separados. Los cinco números de protocolo forman la cabecera que la cerradura espera: los valores por defecto sirven para la mayoría de las cerraduras V3 y, si la cerradura está al alcance, los tres primeros se comparan con lo que emite.",
+        "data": {
+          "lock_mac": "Dirección MAC de la cerradura",
+          "aes_key": "Clave AES",
+          "unlock_key": "Clave de apertura",
+          "admin_passcode": "Código de administrador (opcional)",
+          "lock_name": "Nombre (opcional)",
+          "protocol_type": "Tipo de protocolo",
+          "protocol_version": "Versión de protocolo",
+          "scene": "Escena",
+          "group_id": "ID de grupo",
+          "org_id": "ID de organización"
+        }
+      },
+      "verify_code": {
+        "title": "Verifica tu cuenta TTLock",
+        "description": "TTLock envió un código de un solo uso a tu correo. Introdúcelo abajo para registrar este Home Assistant como dispositivo de confianza.",
+        "data": {
+          "verification_code": "Código de verificación"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Volver a autenticar TTLock Selfhost",
+        "description": "Tus credenciales ya no son válidas. Introduce las credenciales actualizadas.",
+        "data": {
+          "username": "Correo",
+          "password": "Contraseña"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar TTLock Selfhost",
+        "description": "Actualiza las credenciales de esta entrada. Las llaves se volverán a sincronizar desde la nube.",
+        "data": {
+          "username": "Correo",
+          "password": "Contraseña"
+        }
+      },
+      "reconfigure_manual": {
+        "title": "Actualizar la llave de la cerradura",
+        "description": "Corrige los valores guardados para esta cerradura. No interviene ninguna cuenta en la nube.",
+        "data": {
+          "lock_mac": "Dirección MAC de la cerradura",
+          "aes_key": "Clave AES",
+          "unlock_key": "Clave de apertura",
+          "admin_passcode": "Código de administrador (opcional)",
+          "lock_name": "Nombre (opcional)",
+          "protocol_type": "Tipo de protocolo",
+          "protocol_version": "Versión de protocolo",
+          "scene": "Escena",
+          "group_id": "ID de grupo",
+          "org_id": "ID de organización"
+        }
+      }
+    },
+    "error": {
+      "auth": "El correo o la contraseña no son correctos.",
+      "connection": "No se pudo conectar con la nube TTLock.",
+      "invalid_code": "El código de verificación no fue aceptado. Inténtalo de nuevo.",
+      "verification_required": "TTLock exige verificar este dispositivo. Vuelve a añadir la integración para completar el proceso.",
+      "unknown": "Se produjo un error desconocido.",
+      "invalid_mac": "Introduce una dirección MAC con el formato AA:BB:CC:DD:EE:FF.",
+      "invalid_aes_key": "La clave AES debe tener 16 bytes en hexadecimal.",
+      "invalid_unlock_key": "La clave de apertura solo puede tener dígitos.",
+      "invalid_admin_passcode": "El código de administrador solo puede tener dígitos.",
+      "protocol_mismatch": "La cerradura emite un tipo de protocolo, versión o escena distintos de los introducidos. Compara los valores con los datos de tu cerradura.",
+      "lock_not_in_account": "Esta cuenta no tiene llave para la cerradura encontrada. Inicia sesión con la cuenta propietaria o introduce su llave a mano."
+    },
+    "abort": {
+      "already_configured": "Esta cerradura o cuenta ya está configurada.",
+      "reauth_successful": "La autenticación se renovó correctamente.",
+      "reconfigure_successful": "La reconfiguración se realizó correctamente.",
+      "wrong_account": "Las credenciales pertenecen a otra cuenta TTLock. Autentícate con la cuenta con la que se creó esta entrada.",
+      "not_a_lock": "Este dispositivo Bluetooth no es una cerradura TTLock."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones de TTLock Selfhost",
+        "description": "Comportamiento de esta entrada.",
+        "data": {
+          "permanent_connection": "Conexión permanente"
+        },
+        "data_description": {
+          "permanent_connection": "Mantiene abierta una sesión BLE y la reabre en cuanto cae. Desactivada, solo se conecta a la cerradura para ejecutar una orden o leer los registros que dice tener; el estado y la batería llegan en sus anuncios, que no cuestan ninguna sesión. Activada, las órdenes responden al instante, a costa de la batería de la cerradura."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "connection": {
+        "name": "Conexión Bluetooth"
+      },
+      "door": {
+        "name": "Puerta"
+      }
+    },
+    "button": {
+      "refresh_credentials": {
+        "name": "Actualizar credenciales"
+      }
+    },
+    "event": {
+      "log": {
+        "name": "Registro",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "unlock": "Apertura",
+              "lock": "Cierre",
+              "unlock_failed": "Apertura fallida",
+              "password_change": "Cambio de código",
+              "other": "Otro"
+            }
+          }
+        }
+      }
+    },
+    "lock": {
+      "lock": {
+        "name": "Cerradura"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Batería"
+      },
+      "card_count": {
+        "name": "Tarjetas registradas"
+      },
+      "clock_drift": {
+        "name": "Desfase del reloj"
+      },
+      "connect_time": {
+        "name": "Tiempo de conexión"
+      },
+      "connection_success_rate": {
+        "name": "Tasa de éxito de conexión"
+      },
+      "fingerprint_count": {
+        "name": "Huellas registradas"
+      },
+      "last_seen": {
+        "name": "Vista por última vez"
+      },
+      "last_unlocked_by": {
+        "name": "Última apertura por"
+      },
+      "signal_quality": {
+        "name": "Calidad de la señal"
+      },
+      "signal_strength": {
+        "name": "Intensidad de la señal"
+      }
+    },
+    "switch": {
+      "sound": {
+        "name": "Sonido"
+      }
+    },
+    "text": {
+      "card_name": {
+        "name": "Tarjeta {label}"
+      },
+      "fingerprint_name": {
+        "name": "Huella {label}"
+      },
+      "passcode_name": {
+        "name": "Código {label}"
+      }
+    }
+  },
+  "exceptions": {
+    "credentials_not_read": {
+      "message": "No se pudieron leer las credenciales de {lock}. Comprueba que la cerradura esté al alcance e inténtalo de nuevo."
+    }
+  },
+  "selector": {
+    "cloud_app": {
+      "options": {
+        "dlock_xp": "TTLock / DLock-XP",
+        "schlage_breeze": "Schlage Breeze"
+      }
+    }
+  }
+}

@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+> This repository is TTLock Selfhost, built on this project. Read `AGENTS.md` for the gateway route and the panel.
+
 ## Always read `CODE_STYLE.md` first
 
 Before creating, renaming or restructuring any file/class/function, **read [`CODE_STYLE.md`](./CODE_STYLE.md)**. It is the single source of truth for conventions: language, file organisation, naming, typing, properties vs `__init__`, imports, docstrings, comments, coordinator pattern, diagnostics layout, translations, lint workflow.
