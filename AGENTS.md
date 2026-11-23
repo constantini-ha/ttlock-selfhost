@@ -39,3 +39,7 @@ Coverage gate is 90%. The panel has no JS test runner; check it in a browser wit
 
 - Never send lock/unlock to a real lock while testing; the owner tests on their network.
 - Never log or print tokens, `client_secret`, AES keys or passcodes.
+
+## Brand
+
+`brand/icon.svg` is the family logo (indigo-to-blue tile, white house, cyan pins) with a padlock in place of Tuya Selfhost's ring. The PNGs in `custom_components/ttlock_selfhost/brand/` are rendered from it; change the SVG and re-render, never edit a PNG.
