@@ -3115,7 +3115,7 @@ wheels = [
 
 [[package]]
 name = "ttlock-selfhost"
-version = "2026.11.2"
+version = "2026.11.3"
 source = { virtual = "." }
 
 [package.dev-dependencies]

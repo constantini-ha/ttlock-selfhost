@@ -30,9 +30,11 @@ Read `CLAUDE.md` and `CODE_STYLE.md` first: they are the base project's (roquero
 ## Dashboard card
 
 - `frontend/ttlock-selfhost-doors-card.js` (`custom:ttlock-selfhost-doors-card`), loaded with `add_extra_js_url` next to the panel. No config lists every lock of the integration; `entities` and `title` are optional.
+- **The tiles are built once and repainted in place** (`_tile` builds, `_paint` updates). Rebuilding the DOM on every state change, as 2026.11.2 did, puts a new door straight in its final pose and the swing never plays.
+- The door is two stacked `<svg>`: the doorway and the leaf. The leaf swings with `perspective() rotateY()` on the `<svg>` element itself, because 3D transforms do not work on elements inside an SVG. It uses transitions only, never keyframes: a keyframe animation that ends makes the next transition start from the resting pose and the door jumps.
+- Owner's taste (23/11/2026): no yellow in the confirm dialog. The dialog and the door leaf use `--primary-color`; amber stays only as the unlocked mark on the tile (badge, label, border).
 - It reads only `hass.states`, `hass.entities` and `hass.devices`, never the admin-only websocket commands, so non-admin users of a dashboard can use it.
 - Owner's rule (22/11/2026): **opening asks for confirmation, locking does not.** The confirmation is a native `<dialog>` appended to `<body>` so no card transform clips it.
-- The door is inline SVG; the leaf swings with `scaleX` + `skewY` on its hinge (CSS 3D on SVG groups is unreliable). Honour `prefers-reduced-motion`.
 
 ## Checks
 
