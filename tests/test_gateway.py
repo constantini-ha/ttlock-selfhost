@@ -92,6 +92,14 @@ async def test_route_gateway_skips_bluetooth(
     mock_api.async_unlock.assert_awaited_once()
 
 
+async def test_a_gateway_command_shows_its_result_at_once(
+    hass, gateway_entry, mock_api, real_settle_window
+) -> None:
+    await gateway_entry("gateway")
+    assert (await _call(hass, SERVICE_UNLOCK)).state == "unlocked"
+    assert (await _call(hass, SERVICE_LOCK)).state == "locked"
+
+
 async def test_a_cloud_refusal_fails_the_command(hass, gateway_entry, mock_api) -> None:
     await gateway_entry("gateway")
     mock_api.async_unlock = AsyncMock(side_effect=TtlockOpenApiError("off", -4043))

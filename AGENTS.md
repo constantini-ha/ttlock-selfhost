@@ -22,6 +22,7 @@ Read `CLAUDE.md` and `CODE_STYLE.md` first: they are the base project's (roquero
 - A record moves the bolt only when it is live (uploaded, `serverDate`, within 5 minutes of the lock's stamp). A lock or unlock that was not taken leaves the bolt in doubt, so it is read once through the gateway.
 - The webhook answers GET and HEAD with `success` too and does nothing: a refused method makes Home Assistant log the secret webhook id.
 - These locks write no record when they lock themselves again, so after a push that leaves the bolt not locked `gateway.py` reads it 20 s later and once more at 120 s. Each read wakes the lock; do not turn this into polling.
+- A command sent through the gateway clears `is_locking`/`is_unlocking` the moment the cloud call returns: the cloud answers after the lock acted, and the Bluetooth push that normally ends the settle window never comes on that route (it used to leave the card animating for the full 15 s). The settle window itself stays, to suppress a contradicting read.
 - A renewed token is stored on the entry **without** reloading it (`async_consume_token_update`); every other entry update reloads.
 
 ## Panel

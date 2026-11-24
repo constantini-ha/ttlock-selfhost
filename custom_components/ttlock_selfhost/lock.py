@@ -346,7 +346,11 @@ class TtlockBleLock(TtlockBleEntity, LockEntity):
                     COMMAND_SETTLE_SECONDS,
                     self._async_settle_timeout,
                 )
-                moving = True
+                # The cloud answers once the lock has acted, and no push follows
+                # through the gateway to end the wait sooner.
+                moving = (
+                    self._attr_extra_state_attributes["last_route"] != ROUTE_GATEWAY
+                )
             finally:
                 # The bolt is still travelling after a successful command;
                 # `_async_end_settle` clears the transitional state then.
