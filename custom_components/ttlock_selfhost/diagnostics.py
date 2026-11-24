@@ -33,6 +33,9 @@ TO_REDACT: frozenset[str] = frozenset(
         "unlockKey",
         "adminPs",
         "keys",
+        "client_id",
+        "client_secret",
+        "token",
     },
 )
 

@@ -19,6 +19,7 @@ from ttlock_ble import VirtualKey
 
 from .advertisement import TtlockBleAdvertisementTracker
 from .clock_sync_store import async_get_clock_sync_store
+from .cloud_push import async_register_callback
 from .command_journal import TtlockBleCommandJournal
 from .connection import TtlockBleConnection
 from .const import CONF_GATEWAY, CONF_PERMANENT_CONNECTION, DOMAIN, LOGGER
@@ -181,6 +182,7 @@ async def async_setup_entry(
     )
     if gateway is not None:
         entry.async_on_unload(gateway.async_start())
+        entry.async_on_unload(async_register_callback(hass, entry, gateway))
     await async_setup_panel(hass)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

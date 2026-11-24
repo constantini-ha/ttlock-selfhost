@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING
 from ttlock_ble import LogOperate
 
 from .credential_type import TtlockBleCredentialType
-from .data import TtlockBleEnrolledFingerprint, TtlockBleLogCredential
+from .data import (
+    TtlockBleCloudLogEntry,
+    TtlockBleEnrolledFingerprint,
+    TtlockBleLogCredential,
+)
 from .data.known_credential import passcode_key
 from .lock_command import TtlockBleLockCommand
 
@@ -104,8 +108,12 @@ class TtlockBleCredentialResolver:
         key: str | None,
     ) -> str | None:
         if credential_type is not None and key is not None:
-            return self._credentials.name_of(mac, credential_type, key)
-        return self._home_assistant_name_of(mac, record)
+            name = self._credentials.name_of(mac, credential_type, key)
+        else:
+            name = self._home_assistant_name_of(mac, record)
+        if name is None and isinstance(record, TtlockBleCloudLogEntry):
+            return record.username
+        return name
 
     def _home_assistant_name_of(self, mac: str, record: LogEntry) -> str | None:
         """

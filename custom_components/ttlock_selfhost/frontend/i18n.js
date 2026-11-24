@@ -156,6 +156,21 @@ const STRINGS = {
     gateways_near: "Gateways that hear this lock",
     signal: "{rssi} dBm",
     cloud_error: "Last answer from the cloud: {err}",
+    callback_title: "Notice when the door opens",
+    callback_on: "TTLock is notifying Home Assistant",
+    callback_off: "No notice from TTLock yet",
+    callback_last: "Last notice: {when}",
+    callback_never: "Until it is set up, the lock is only checked every 30 minutes.",
+    callback_steps:
+      "At open.ttlock.com (or euopen.ttlock.com), open your application and paste this address " +
+      "in “Callback URL”. From then on every unlock, lock and door opening shows up here within " +
+      "seconds. Keep the address to yourself: whoever has it can make a door look open or closed.",
+    callback_steps_local:
+      "At open.ttlock.com (or euopen.ttlock.com), open your application and paste this address " +
+      "in “Callback URL”. It only works with the address your Home Assistant has on the internet: " +
+      "open this screen through it, or set the external URL in Settings → System → Network.",
+    callback_copy: "Copy the address",
+    callback_copied: "Address copied.",
     err_need_account: "Enter the TTLock app account and password.",
     err_unreachable: "Could not reach the TTLock cloud.",
     err_no_gateway: "This needs the gateway connection.",
@@ -316,6 +331,21 @@ const STRINGS = {
     gateways_near: "Gateways que ouvem esta fechadura",
     signal: "{rssi} dBm",
     cloud_error: "Última resposta da nuvem: {err}",
+    callback_title: "Aviso quando a porta abre",
+    callback_on: "A TTLock está avisando o Home Assistant",
+    callback_off: "Nenhum aviso da TTLock ainda",
+    callback_last: "Último aviso: {when}",
+    callback_never: "Sem isso, a fechadura só é consultada a cada 30 minutos.",
+    callback_steps:
+      "Em open.ttlock.com (ou euopen.ttlock.com), abra o seu aplicativo e cole este endereço " +
+      "em “Callback URL”. A partir daí, cada abertura, trancamento e porta aberta aparece aqui em " +
+      "segundos. Não compartilhe o endereço: quem tiver pode fazer uma porta parecer aberta ou fechada.",
+    callback_steps_local:
+      "Em open.ttlock.com (ou euopen.ttlock.com), abra o seu aplicativo e cole este endereço " +
+      "em “Callback URL”. Só funciona com o endereço que o seu Home Assistant tem na internet: " +
+      "abra esta tela por ele, ou informe a URL externa em Configurações → Sistema → Rede.",
+    callback_copy: "Copiar o endereço",
+    callback_copied: "Endereço copiado.",
     err_need_account: "Informe a conta e a senha do app TTLock.",
     err_unreachable: "Não foi possível falar com a nuvem da TTLock.",
     err_no_gateway: "Isto precisa da conexão do gateway.",
@@ -476,6 +506,21 @@ const STRINGS = {
     gateways_near: "Gateways que oyen esta cerradura",
     signal: "{rssi} dBm",
     cloud_error: "Última respuesta de la nube: {err}",
+    callback_title: "Aviso cuando se abre la puerta",
+    callback_on: "TTLock está avisando a Home Assistant",
+    callback_off: "Todavía no hay avisos de TTLock",
+    callback_last: "Último aviso: {when}",
+    callback_never: "Sin esto, la cerradura solo se consulta cada 30 minutos.",
+    callback_steps:
+      "En open.ttlock.com (o euopen.ttlock.com), abre tu aplicación y pega esta dirección " +
+      "en “Callback URL”. Desde entonces, cada apertura, cierre y puerta abierta aparece aquí en " +
+      "segundos. No compartas la dirección: quien la tenga puede hacer que una puerta parezca abierta o cerrada.",
+    callback_steps_local:
+      "En open.ttlock.com (o euopen.ttlock.com), abre tu aplicación y pega esta dirección " +
+      "en “Callback URL”. Solo funciona con la dirección que tu Home Assistant tiene en internet: " +
+      "abre esta pantalla por ella, o indica la URL externa en Ajustes → Sistema → Red.",
+    callback_copy: "Copiar la dirección",
+    callback_copied: "Dirección copiada.",
     err_need_account: "Indica la cuenta y la contraseña de la app TTLock.",
     err_unreachable: "No se pudo hablar con la nube de TTLock.",
     err_no_gateway: "Esto necesita la conexión del gateway.",

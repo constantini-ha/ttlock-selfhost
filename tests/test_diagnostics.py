@@ -190,3 +190,11 @@ async def test_diagnostics_carries_the_hardware_strings(
 
     diagnostics = await async_get_config_entry_diagnostics(hass, setup_integration)
     assert diagnostics["device_descriptions"][sample_virtual_key.lockMac] == description
+
+
+async def test_diagnostics_redacts_the_gateway_session(hass, gateway_entry) -> None:
+    diag = await async_get_config_entry_diagnostics(hass, await gateway_entry())
+    gateway = diag["entry"]["data"]["gateway"]
+    assert gateway["client_secret"] == "**REDACTED**"
+    assert gateway["client_id"] == "**REDACTED**"
+    assert gateway["token"] == "**REDACTED**"

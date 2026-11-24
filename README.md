@@ -33,6 +33,15 @@ HACS → Custom repositories → `https://github.com/constantini-ha/ttlock-selfh
 | Cards, fingerprints | what the lock listed | names and validity |
 | eKeys | no | list |
 
+#### Know the moment a door opens
+
+A lock that only the gateway reaches is otherwise asked for its state every 30 minutes. To hear about each unlock, lock and door opening within seconds:
+
+1. In the panel, open **Gateway** and copy the address under **Notice when the door opens**.
+2. At <https://euopen.ttlock.com> (or <https://open.ttlock.com>), open your application and paste it in **Callback URL**.
+
+Home Assistant has to be reachable from the internet at that address (set the external URL in **Settings → System → Network**). Keep the address private: TTLock does not sign what it sends, so whoever has it can make a door look open or closed. It cannot operate a lock.
+
 ## Dashboard card
 
 ```yaml

@@ -151,6 +151,8 @@ const STYLE = `
   .mono { font-family: ui-monospace, "Roboto Mono", monospace; letter-spacing: 1px; }
   .secondary { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
     text-align: center; color: var(--error-color, #d93025); padding: 14px; font-size: 15px; }
+  .url { padding: 12px 16px; font-size: 12px; letter-spacing: 0; overflow-wrap: anywhere;
+    color: var(--secondary-text-color); user-select: all; }
   .big-code { text-align: center; font-size: 34px; padding: 22px 8px 6px; }
   .center { text-align: center; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
@@ -908,6 +910,48 @@ class TtlockSelfhostPanel extends HTMLElement {
     return out;
   }
 
+  _callback(cb) {
+    if (!cb) return [];
+    const url = cb.url || location.origin + cb.path;
+    return [
+      h("div", { class: "day" }, this._t("callback_title")),
+      h(
+        "div",
+        { class: "card" },
+        h(
+          "div",
+          { class: "row" },
+          icon(cb.received_at ? "mdi:bell-check-outline" : "mdi:bell-sleep-outline"),
+          h(
+            "span",
+            { class: "main" },
+            h("b", {}, this._t(cb.received_at ? "callback_on" : "callback_off")),
+            h(
+              "small",
+              {},
+              cb.received_at
+                ? this._t("callback_last", { when: this._when(cb.received_at) })
+                : this._t("callback_never")
+            )
+          )
+        ),
+        h("div", { class: "url mono" }, url)
+      ),
+      h("p", { class: "note" }, this._t(cb.url ? "callback_steps" : "callback_steps_local")),
+      h(
+        "button",
+        {
+          class: "primary",
+          onclick: async () => {
+            await navigator.clipboard?.writeText(url);
+            this._say(this._t("callback_copied"));
+          },
+        },
+        this._t("callback_copy")
+      ),
+    ];
+  }
+
   _gateway(lock) {
     const gw = lock.gateway;
     const form = this._form;
@@ -945,6 +989,7 @@ class TtlockSelfhostPanel extends HTMLElement {
             )
           : null,
         gw.error ? h("p", { class: "note" }, this._t("cloud_error", { err: gw.error })) : null,
+        ...this._callback(gw.callback),
         h("p", { class: "note" }, this._t("gw_intro")),
         h("button", { class: "secondary", onclick: () => this._disconnect(lock) }, this._t("disconnect")),
       ];

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from custom_components.ttlock_selfhost.cloud_push import callback_path
 from custom_components.ttlock_selfhost.const import CONF_GATEWAY, CONF_ROUTE
 from custom_components.ttlock_selfhost.history_store import async_get_history_store
 from custom_components.ttlock_selfhost.openapi import TtlockOpenApiError
@@ -35,6 +36,11 @@ async def test_locks_describe_both_routes(
         "has_gateway": True,
         "gateways": [{"name": "G2", "rssi": -60}],
         "error": None,
+        "callback": {
+            "url": None,
+            "path": callback_path(entry),
+            "received_at": None,
+        },
     }
     assert lock["entities"]["lock"].startswith("lock.")
     assert lock["account"] == "user@example.com"

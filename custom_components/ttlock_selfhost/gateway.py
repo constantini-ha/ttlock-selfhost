@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+import time
+from collections import deque
 from datetime import timedelta
 from typing import TYPE_CHECKING, TypedDict, cast
 
+from homeassistant.components import bluetooth
 from homeassistant.core import callback
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.httpx_client import get_async_client
 
+from .cloud_record import bolt_of, log_entry_of
+from .connection import log_signal
 from .const import CONF_GATEWAY, LOGGER
 from .lock_command import TtlockBleLockCommand
 from .openapi import (
+    Json,
     TtlockBleGatewayConfig,
     TtlockBleGatewayToken,
     TtlockOpenApi,
@@ -32,6 +39,14 @@ REFRESH_INTERVAL = timedelta(minutes=30)
 # A Bluetooth reading younger than this needs no question to the gateway,
 # which wakes the lock to answer.
 FRESH_SECONDS = 30 * 60
+# A lock that locks itself again writes no record, so the bolt is asked for
+# this long after a push, and once more if it was still open.
+RELOCK_READ_DELAYS = (20.0, 120.0)
+# A record uploaded this close to when the lock stamped it happened just now.
+# Wide, because nothing sets the clock of a lock Bluetooth never reaches.
+LIVE_SECONDS = 300
+# Pushed records remembered per lock, to tell one sent twice.
+PUSH_MEMORY = 64
 
 
 class TtlockBleGatewayLink(TypedDict):
@@ -61,6 +76,10 @@ class TtlockBleGateway:
         self._keys = keys
         self._links: dict[str, TtlockBleGatewayLink] = {}
         self._token_stored = False
+        self._pushed: dict[str, deque[tuple[object, object]]] = {}
+        self._watches: dict[str, CALLBACK_TYPE] = {}
+        self._bolt_at: dict[str, int] = {}
+        self.pushed_at: float | None = None
         self.api = TtlockOpenApi(
             client=get_async_client(hass),
             client_id=config["client_id"],
@@ -93,9 +112,82 @@ class TtlockBleGateway:
         self._entry.async_create_background_task(
             self._hass, self.async_refresh(), "ttlock_selfhost.gateway_refresh"
         )
-        return async_track_time_interval(
+        stop_refresh = async_track_time_interval(
             self._hass, self.async_refresh, REFRESH_INTERVAL
         )
+
+        @callback
+        def stop() -> None:
+            stop_refresh()
+            for mac in list(self._watches):
+                self._watches.pop(mac)()
+
+        return stop
+
+    @callback
+    def async_push(self, lock_id: int, rows: list[Json]) -> None:
+        """Take the records the cloud just pushed for one lock."""
+        self.pushed_at = time.time()
+        key = next((key for key in self._keys if key.lockId == lock_id), None)
+        # A lock Bluetooth hears already tells all of this, sooner and for free.
+        if key is None or bluetooth.async_address_present(
+            self._hass, key.lockMac, connectable=False
+        ):
+            return
+        mac = key.lockMac
+        seen = self._pushed.setdefault(mac, deque(maxlen=PUSH_MEMORY))
+        fresh: list[Json] = []
+        for row in sorted(rows, key=_when):
+            mark = (row.get("lockDate"), row.get("recordType"))
+            if mark not in seen:
+                seen.append(mark)
+                fresh.append(row)
+        if not fresh:
+            return
+        level = fresh[-1].get("electricQuantity")
+        bolt = next((row for row in reversed(fresh) if bolt_of(row) is not None), None)
+        locked = None
+        # A backlog, or a record older than one already taken, says nothing about now.
+        if (
+            bolt is not None
+            and _live(bolt)
+            and _when(bolt) >= self._bolt_at.get(mac, 0)
+        ):
+            self._bolt_at[mac] = _when(bolt)
+            locked = bolt_of(bolt)
+        self._coordinator.async_apply_cloud_state(
+            mac,
+            locked=locked,
+            battery=level if isinstance(level, int) else None,
+            replace_battery=True,
+        )
+        battery = self._coordinator.async_battery(mac)
+        for row in fresh:
+            entry = log_entry_of(row, battery=battery)
+            if entry is not None:
+                async_dispatcher_send(self._hass, log_signal(mac), entry)
+        self._async_watch_bolt(key)
+
+    @callback
+    def _async_watch_bolt(self, key: VirtualKey) -> None:
+        cancel = self._watches.pop(key.lockMac, None)
+        if cancel is not None:
+            cancel()
+        if not self._coordinator.async_locked(key.lockMac):
+            self._async_arm_watch(key, RELOCK_READ_DELAYS)
+
+    @callback
+    def _async_arm_watch(self, key: VirtualKey, delays: tuple[float, ...]) -> None:
+        mac = key.lockMac
+
+        async def read(_now: datetime) -> None:
+            self._watches.pop(mac, None)
+            still_open = await self.async_read_state(key) is False
+            # A push that came in during the read has already armed its own.
+            if still_open and delays[1:] and mac not in self._watches:
+                self._async_arm_watch(key, delays[1:])
+
+        self._watches[mac] = async_call_later(self._hass, delays[0], read)
 
     async def async_command(
         self, key: VirtualKey, action: TtlockBleLockCommand
@@ -170,3 +262,14 @@ class TtlockBleGateway:
         self._hass.config_entries.async_update_entry(
             self._entry, data={**self._entry.data, CONF_GATEWAY: config}
         )
+
+
+def _when(row: Json) -> int:
+    stamp = row.get("lockDate")
+    return stamp if isinstance(stamp, int) else 0
+
+
+def _live(row: Json) -> bool:
+    uploaded = row.get("serverDate")
+    reference = uploaded if isinstance(uploaded, int) else time.time() * 1000
+    return abs(reference - _when(row)) < LIVE_SECONDS * 1000

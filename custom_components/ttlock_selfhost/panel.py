@@ -18,6 +18,8 @@ from homeassistant.loader import async_get_integration
 
 from ttlock_ble import TTLockError
 
+from .cloud_push import callback_path, callback_url
+from .cloud_record import CLOUD_RECORDS
 from .const import (
     CONF_GATEWAY,
     CONF_PERMANENT_CONNECTION,
@@ -58,33 +60,6 @@ RECORD_DAYS = 30
 ERR_FAILED = "failed"
 ERR_NOT_FOUND = "not_found"
 ERR_NO_GATEWAY = "no_gateway"
-
-# Cloud record type -> (what happened, the credential behind it).
-CLOUD_RECORDS: dict[int, tuple[str, str | None]] = {
-    1: ("unlock", "app"),
-    4: ("unlock", "passcode"),
-    7: ("unlock", "card"),
-    8: ("unlock", "fingerprint"),
-    9: ("unlock", "key_fob"),
-    10: ("unlock", "mechanical_key"),
-    11: ("lock", "app"),
-    12: ("unlock", "gateway"),
-    29: ("alarm", None),
-    30: ("door_closed", None),
-    31: ("door_open", None),
-    32: ("unlock", "inside"),
-    33: ("lock", "fingerprint"),
-    34: ("lock", "passcode"),
-    35: ("lock", "card"),
-    36: ("lock", "mechanical_key"),
-    44: ("alarm", None),
-    45: ("lock", "auto"),
-    46: ("unlock", "button"),
-    47: ("lock", "button"),
-    48: ("alarm", None),
-    55: ("unlock", "key_fob"),
-    92: ("unlock", "passcode"),
-}
 
 type Message = dict[str, object]
 
@@ -171,6 +146,18 @@ def _entities(
     }
 
 
+def _callback(hass: HomeAssistant, entry: TtlockBleConfigEntry) -> Message | None:
+    gateway = entry.runtime_data.gateway
+    if gateway is None:
+        return None
+    pushed_at = gateway.pushed_at
+    return {
+        "url": callback_url(hass, entry),
+        "path": callback_path(entry),
+        "received_at": None if pushed_at is None else int(pushed_at * 1000),
+    }
+
+
 def _describe(
     hass: HomeAssistant, entry: TtlockBleConfigEntry, key: VirtualKey
 ) -> Message:
@@ -202,6 +189,7 @@ def _describe(
                 for row in (link["gateways"] if link else [])
             ],
             "error": link["error"] if link else None,
+            "callback": _callback(hass, entry),
         },
         "route": entry.options.get(CONF_ROUTE, ROUTE_AUTO),
         "permanent_connection": bool(

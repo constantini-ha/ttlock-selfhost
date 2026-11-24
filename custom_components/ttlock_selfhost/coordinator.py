@@ -253,6 +253,16 @@ class TtlockBleDataUpdateCoordinator(DataUpdateCoordinator["TtlockBleCoordinator
         self.async_note_lock_seen(mac)
 
     @callback
+    def async_locked(self, mac: str) -> bool:
+        """Report whether the bolt of `mac` is known to be locked."""
+        return ((self.data or {}).get(mac) or {}).get("locked") is True
+
+    @callback
+    def async_battery(self, mac: str) -> int:
+        """Return the last battery level known for `mac`, 0 when none is."""
+        return ((self.data or {}).get(mac) or {}).get("battery_level") or 0
+
+    @callback
     def async_state_age(self, mac: str) -> float:
         """Return the seconds since the bolt of `mac` was last read, inf if never."""
         observed_at = ((self.data or {}).get(mac) or {}).get("observed_at")
@@ -267,20 +277,25 @@ class TtlockBleDataUpdateCoordinator(DataUpdateCoordinator["TtlockBleCoordinator
         *,
         locked: bool | None = None,
         battery: int | None = None,
+        replace_battery: bool = False,
     ) -> None:
         """
         Publish what the gateway route reported for `mac`.
 
         The cloud's battery is the last one an app or gateway uploaded, so
-        it only fills in for a lock Bluetooth has not read yet.
+        it only fills in for a lock Bluetooth has not read yet - unless
+        it came with a record of this moment, which `replace_battery` says.
         """
         previous = (self.data or {}).get(mac) or {}
         snapshot: TtlockBleLockState = {**previous}
         if locked is not None:
             snapshot["locked"] = locked
             snapshot["observed_at"] = time.monotonic()
-        if battery is not None and previous.get("battery_level") is None:
+        if battery is not None and (
+            replace_battery or previous.get("battery_level") is None
+        ):
             snapshot["battery_level"] = battery
+            snapshot["battery_advertised"] = False
         if snapshot == previous:
             return
         self.async_set_updated_data({**(self.data or {}), mac: snapshot})
