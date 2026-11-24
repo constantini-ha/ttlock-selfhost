@@ -403,7 +403,7 @@ class TtlockSelfhostPanel extends HTMLElement {
     const root = this.shadowRoot;
     const lock = this._lock();
     let view = this._view;
-    if (view !== "list" && !lock) view = "list";
+    if (!["list", "callback"].includes(view) && !lock) view = "list";
     if (view === "home" && !lock) view = "list";
     const body = {
       list: () => this._list(),
@@ -415,7 +415,7 @@ class TtlockSelfhostPanel extends HTMLElement {
       ekeys: () => this._ekeys(lock),
       records: () => this._records(),
       gateway: () => this._gateway(lock),
-      callback: () => this._callback(lock.gateway.callback),
+      callback: () => this._callbacks(),
       settings: () => this._settings(lock),
     }[view]();
     const single = (this._locks || []).length <= 1;
@@ -459,7 +459,20 @@ class TtlockSelfhostPanel extends HTMLElement {
               },
               icon("mdi:view-dashboard-outline")
             )
-          : h("span");
+          : view === "list" && this._accounts().length
+            ? h(
+                "button",
+                {
+                  "aria-label": this._t("settings"),
+                  title: this._t("settings"),
+                  onclick: () => {
+                    this._callbackFrom = "list";
+                    this._go("callback");
+                  },
+                },
+                icon("mdi:cog-outline")
+              )
+            : h("span");
     const parts = [
       h("style", {}, STYLE),
       h("div", { class: "bar" }, left, h("h1", {}, title), right),
@@ -499,14 +512,23 @@ class TtlockSelfhostPanel extends HTMLElement {
         )
       )
       ),
-      // The callback belongs to the account, so it is offered once per entry.
-      ...this._locks
-        .filter(
-          (lock, at, all) =>
-            lock.gateway.callback && all.findIndex((other) => other.entry_id === lock.entry_id) === at
-        )
-        .map((lock) => this._callbackRow(lock, "list")),
     ];
+  }
+
+  // The callback belongs to the account, so each entry is listed once.
+  _accounts() {
+    return (this._locks || []).filter(
+      (lock, at, all) =>
+        lock.gateway.callback && all.findIndex((other) => other.entry_id === lock.entry_id) === at
+    );
+  }
+
+  _callbacks() {
+    const accounts = this._accounts();
+    return accounts.flatMap((lock) => [
+      accounts.length > 1 ? h("div", { class: "day" }, lock.account || lock.name) : null,
+      ...this._callback(lock.gateway.callback),
+    ]);
   }
 
   _callbackRow(lock, from) {
@@ -520,7 +542,7 @@ class TtlockSelfhostPanel extends HTMLElement {
           class: "row",
           onclick: () => {
             this._callbackFrom = from;
-            this._go("callback", lock.mac);
+            this._go("callback");
           },
         },
         icon(cb.received_at ? "mdi:bell-check-outline" : "mdi:bell-sleep-outline"),

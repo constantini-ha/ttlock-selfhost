@@ -23,7 +23,7 @@ Read `CLAUDE.md` and `CODE_STYLE.md` first: they are the base project's (roquero
 - The webhook answers GET and HEAD with `success` too and does nothing: a refused method makes Home Assistant log the secret webhook id.
 - These locks write no record when they lock themselves again, so after a push that leaves the bolt not locked `gateway.py` reads it 20 s later and once more at 120 s. Each read wakes the lock; do not turn this into polling.
 - A command sent through the gateway clears `is_locking`/`is_unlocking` the moment the cloud call returns: the cloud answers after the lock acted, and the Bluetooth push that normally ends the settle window never comes on that route (it used to leave the card animating for the full 15 s). The settle window itself stays, to suppress a contradicting read.
-- The callback belongs to the account (the entry), not to a lock: the panel offers it once per entry on the lock list, on its own `callback` screen, and the lock's Gateway screen only links there (owner's request, 24/11).
+- The callback belongs to the account (the entry), not to a lock: the panel opens it from a gear icon at the right of the lock list's header, like Tuya Selfhost's (owner's request, 24/11; a row under the list was rejected), on its own `callback` screen that stacks every entry. The lock's Gateway screen only links there.
 - 2026.11.6 deleted a block of panel CSS along with the button it meant to remove (`.primary`, `.note`, `.day`, `.tabs`, `label.field`, the small `.ghost`); nobody noticed for four releases. After touching `STYLE`, screenshot a form screen and a notes screen, not only the screen being changed.
 - A renewed token is stored on the entry **without** reloading it (`async_consume_token_update`); every other entry update reloads.
 
