@@ -120,6 +120,7 @@ class TtlockBleConnection:
         self._seen_records: set[int] = set(cursor.records)
         self._log_seeded = cursor.seeded
         self._on_records_seen = cursor.on_move
+        self._is_news = cursor.is_news
         self._broadcast_connected = False
         self._quality = TtlockBleConnectionQuality()
 
@@ -450,6 +451,8 @@ class TtlockBleConnection:
                 len(new_entries),
             )
             for entry in new_entries:
+                if self._is_news is not None and not self._is_news(entry):
+                    continue
                 async_dispatcher_send(
                     self._hass,
                     log_signal(self._key.lockMac),

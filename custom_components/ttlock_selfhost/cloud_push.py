@@ -54,6 +54,9 @@ def async_register_callback(
     async def handle(
         _hass: HomeAssistant, _webhook_id: str, request: web.Request
     ) -> web.Response:
+        # A browser or a reachability check; refusing it would log the secret id.
+        if request.method != "POST":
+            return web.Response(text="success")
         form = await request.post()
         try:
             rows = json.loads(cast("str", form.get("records") or "[]"))
@@ -68,6 +71,11 @@ def async_register_callback(
 
     webhook_id = callback_id(entry)
     webhook.async_register(
-        hass, DOMAIN, "TTLock Selfhost", webhook_id, handle, allowed_methods=["POST"]
+        hass,
+        DOMAIN,
+        "TTLock Selfhost",
+        webhook_id,
+        handle,
+        allowed_methods=["POST", "GET", "HEAD"],
     )
     return partial(webhook.async_unregister, hass, webhook_id)

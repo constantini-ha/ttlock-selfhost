@@ -867,6 +867,33 @@ async def test_restored_cursor_dispatches_without_a_seeding_pass(
     assert [e.record_number for e in received] == [3]
 
 
+async def test_a_record_the_cloud_already_told_is_not_dispatched(
+    hass,
+    mock_ble_resolver,
+    mock_ttlock_client,
+    sample_virtual_key,
+) -> None:
+    received: list = []
+    async_dispatcher_connect(
+        hass,
+        log_signal(sample_virtual_key.lockMac),
+        received.append,
+    )
+    conn = TtlockBleConnection(
+        hass,
+        sample_virtual_key,
+        log_cursor=TtlockBleLogCursor(
+            seeded=True, is_news=lambda entry: entry.record_number != 2
+        ),
+    )
+    mock_ttlock_client.get_operation_log = AsyncMock(
+        return_value=[_log_entry(1), _log_entry(2)],
+    )
+    await conn.async_get_operation_log()
+    await hass.async_block_till_done()
+    assert [e.record_number for e in received] == [1]
+
+
 async def test_an_empty_restored_cursor_still_seeds(
     hass,
     sample_virtual_key,

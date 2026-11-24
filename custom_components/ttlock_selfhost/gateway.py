@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import time
-from collections import deque
 from datetime import timedelta
 from typing import TYPE_CHECKING, TypedDict, cast
 
-from homeassistant.components import bluetooth
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_interval
@@ -34,6 +32,7 @@ if TYPE_CHECKING:
 
     from .coordinator import TtlockBleDataUpdateCoordinator
     from .data import TtlockBleConfigEntry
+    from .record_echo import TtlockBleRecordEcho
 
 REFRESH_INTERVAL = timedelta(minutes=30)
 # A Bluetooth reading younger than this needs no question to the gateway,
@@ -45,8 +44,6 @@ RELOCK_READ_DELAYS = (20.0, 120.0)
 # A record uploaded this close to when the lock stamped it happened just now.
 # Wide, because nothing sets the clock of a lock Bluetooth never reaches.
 LIVE_SECONDS = 300
-# Pushed records remembered per lock, to tell one sent twice.
-PUSH_MEMORY = 64
 
 
 class TtlockBleGatewayLink(TypedDict):
@@ -67,6 +64,7 @@ class TtlockBleGateway:
         entry: TtlockBleConfigEntry,
         coordinator: TtlockBleDataUpdateCoordinator,
         keys: list[VirtualKey],
+        echo: TtlockBleRecordEcho,
     ) -> None:
         """Build the client from what the entry stores."""
         config = cast("TtlockBleGatewayConfig", entry.data[CONF_GATEWAY])
@@ -74,11 +72,10 @@ class TtlockBleGateway:
         self._entry = entry
         self._coordinator = coordinator
         self._keys = keys
+        self._echo = echo
         self._links: dict[str, TtlockBleGatewayLink] = {}
         self._token_stored = False
-        self._pushed: dict[str, deque[tuple[object, object]]] = {}
         self._watches: dict[str, CALLBACK_TYPE] = {}
-        self._bolt_at: dict[str, int] = {}
         self.pushed_at: float | None = None
         self.api = TtlockOpenApi(
             client=get_async_client(hass),
@@ -129,59 +126,58 @@ class TtlockBleGateway:
         """Take the records the cloud just pushed for one lock."""
         self.pushed_at = time.time()
         key = next((key for key in self._keys if key.lockId == lock_id), None)
-        # A lock Bluetooth hears already tells all of this, sooner and for free.
-        if key is None or bluetooth.async_address_present(
-            self._hass, key.lockMac, connectable=False
-        ):
+        LOGGER.debug(
+            "Cloud pushed %d record(s) of types %s for %s",
+            len(rows),
+            [row.get("recordType") for row in rows],
+            "an unknown lock" if key is None else key.lockMac,
+        )
+        if key is None or not rows:
             return
         mac = key.lockMac
-        seen = self._pushed.setdefault(mac, deque(maxlen=PUSH_MEMORY))
-        fresh: list[Json] = []
-        for row in sorted(rows, key=_when):
-            mark = (row.get("lockDate"), row.get("recordType"))
-            if mark not in seen:
-                seen.append(mark)
-                fresh.append(row)
-        if not fresh:
-            return
-        level = fresh[-1].get("electricQuantity")
-        bolt = next((row for row in reversed(fresh) if bolt_of(row) is not None), None)
-        locked = None
-        # A backlog, or a record older than one already taken, says nothing about now.
-        if (
-            bolt is not None
-            and _live(bolt)
-            and _when(bolt) >= self._bolt_at.get(mac, 0)
-        ):
-            self._bolt_at[mac] = _when(bolt)
-            locked = bolt_of(bolt)
+        rows = sorted(rows, key=_when)
+        level = rows[-1].get("electricQuantity")
+        # A backlog uploaded late says what happened, not how the bolt is now.
+        bolt = next(
+            (row for row in reversed(rows) if bolt_of(row) is not None and _live(row)),
+            None,
+        )
         self._coordinator.async_apply_cloud_state(
             mac,
-            locked=locked,
+            locked=None if bolt is None else bolt_of(bolt),
             battery=level if isinstance(level, int) else None,
             replace_battery=True,
         )
         battery = self._coordinator.async_battery(mac)
-        for row in fresh:
+        for row in rows:
             entry = log_entry_of(row, battery=battery)
-            if entry is not None:
+            # Bluetooth, when it hears the lock, reads the same record off it.
+            if entry is not None and self._echo.first(mac, entry):
                 async_dispatcher_send(self._hass, log_signal(mac), entry)
-        self._async_watch_bolt(key)
+        # A lock or unlock that was not taken leaves the bolt in doubt.
+        self._async_watch_bolt(
+            key, ask=bolt is None and any(bolt_of(row) is not None for row in rows)
+        )
 
     @callback
-    def _async_watch_bolt(self, key: VirtualKey) -> None:
+    def _async_watch_bolt(self, key: VirtualKey, *, ask: bool) -> None:
         cancel = self._watches.pop(key.lockMac, None)
         if cancel is not None:
             cancel()
-        if not self._coordinator.async_locked(key.lockMac):
-            self._async_arm_watch(key, RELOCK_READ_DELAYS)
+        if ask or not self._coordinator.async_locked(key.lockMac):
+            self._async_arm_watch(key, RELOCK_READ_DELAYS, ask=ask)
 
     @callback
-    def _async_arm_watch(self, key: VirtualKey, delays: tuple[float, ...]) -> None:
+    def _async_arm_watch(
+        self, key: VirtualKey, delays: tuple[float, ...], *, ask: bool = False
+    ) -> None:
         mac = key.lockMac
 
         async def read(_now: datetime) -> None:
             self._watches.pop(mac, None)
+            # Bluetooth or a later record may have told it already.
+            if not ask and self._coordinator.async_locked(mac):
+                return
             still_open = await self.async_read_state(key) is False
             # A push that came in during the read has already armed its own.
             if still_open and delays[1:] and mac not in self._watches:
@@ -272,4 +268,4 @@ def _when(row: Json) -> int:
 def _live(row: Json) -> bool:
     uploaded = row.get("serverDate")
     reference = uploaded if isinstance(uploaded, int) else time.time() * 1000
-    return abs(reference - _when(row)) < LIVE_SECONDS * 1000
+    return reference - _when(row) < LIVE_SECONDS * 1000

@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import json
 import time
-from unittest.mock import patch
 
 import pytest
 from homeassistant.helpers import entity_registry as er
@@ -12,7 +11,8 @@ from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from custom_components.ttlock_selfhost.cloud_push import callback_path, callback_url
 from custom_components.ttlock_selfhost.cloud_record import bolt_of, log_entry_of
-from ttlock_ble import LogOperate
+from custom_components.ttlock_selfhost.record_echo import TtlockBleRecordEcho
+from ttlock_ble import LogEntry, LogOperate
 
 
 def _row(code: int, *, ago: float = -1.0, **fields):
@@ -155,13 +155,18 @@ async def test_the_same_record_pushed_twice_counts_once(
     assert _log(hass).state == first
 
 
-async def test_an_old_record_does_not_move_the_bolt(
-    hass, hass_client_no_auth, gateway_entry
+async def test_an_old_record_does_not_move_the_bolt_but_has_it_asked_for(
+    hass, hass_client_no_auth, gateway_entry, mock_api
 ) -> None:
     entry = await gateway_entry()
+    mock_api.async_open_state.reset_mock()
     await _post(hass, hass_client_no_auth, entry, [_row(8, ago=3600, username="Ana")])
     assert _lock(hass).state == "locked"
     assert _log(hass).attributes["credential_name"] == "Ana"
+    await _later(hass, 21)
+    assert mock_api.async_open_state.await_count == 1
+    await _later(hass, 600)
+    assert mock_api.async_open_state.await_count == 1
 
 
 async def test_a_slow_lock_clock_does_not_hide_an_unlock(
@@ -178,15 +183,17 @@ async def test_a_slow_lock_clock_does_not_hide_an_unlock(
     assert _lock(hass).state == "unlocked"
 
 
-async def test_a_record_older_than_the_last_one_taken_is_ignored(
-    hass, hass_client_no_auth, gateway_entry
+async def test_a_bolt_told_meanwhile_is_not_asked_for(
+    hass, hass_client_no_auth, gateway_entry, mock_api, sample_virtual_key
 ) -> None:
     entry = await gateway_entry()
-    await _post(hass, hass_client_no_auth, entry, [_row(8, ago=-5)])
-    await _post(hass, hass_client_no_auth, entry, [_row(11, ago=10)])
-    assert _lock(hass).state == "unlocked"
-    await _post(hass, hass_client_no_auth, entry, [_row(11, ago=-6)])
-    assert _lock(hass).state == "locked"
+    mock_api.async_open_state.reset_mock()
+    await _post(hass, hass_client_no_auth, entry, [_row(8)])
+    entry.runtime_data.coordinator.async_apply_cloud_state(
+        sample_virtual_key.lockMac, locked=True
+    )
+    await _later(hass, 300)
+    mock_api.async_open_state.assert_not_awaited()
 
 
 async def test_the_newest_record_of_a_batch_decides(
@@ -295,17 +302,34 @@ async def test_unloading_stops_the_wait(
     assert await (await client.post(callback_path(entry))).text() != "success"
 
 
-async def test_a_lock_bluetooth_hears_is_left_to_bluetooth(
+async def test_a_record_bluetooth_already_told_is_not_told_again(
+    hass, hass_client_no_auth, gateway_entry, sample_virtual_key
+) -> None:
+    entry = await gateway_entry()
+    row = _row(8, username="Ana")
+    echo = entry.runtime_data.gateway._echo
+    assert echo.first(sample_virtual_key.lockMac, log_entry_of(row, battery=0))
+    await _post(hass, hass_client_no_auth, entry, [row])
+    assert _lock(hass).state == "unlocked"
+    assert _log(hass).state == "unknown"
+
+
+def test_a_record_without_a_time_is_always_news() -> None:
+    echo = TtlockBleRecordEcho()
+    undated = LogEntry(
+        record_number=1, record_type=4, operate_date=None, lock_battery=1
+    )
+    assert echo.first("mac", undated)
+    assert echo.first("mac", undated)
+
+
+async def test_a_browser_opening_the_address_changes_nothing(
     hass, hass_client_no_auth, gateway_entry
 ) -> None:
     entry = await gateway_entry()
-    with patch(
-        "custom_components.ttlock_selfhost.gateway.bluetooth.async_address_present",
-        return_value=True,
-    ):
-        await _post(hass, hass_client_no_auth, entry, [_row(8)])
-    assert _lock(hass).state == "locked"
-    assert _log(hass).state == "unknown"
+    client = await hass_client_no_auth()
+    assert await (await client.get(callback_path(entry))).text() == "success"
+    assert entry.runtime_data.gateway.pushed_at is None
 
 
 async def test_what_cannot_be_read_is_still_answered(
@@ -317,6 +341,7 @@ async def test_what_cannot_be_read_is_still_answered(
         {"lockId": "nope"},
         {"records": "{"},
         {"records": "7"},
+        {"records": "[]"},
         {"records": json.dumps(["x", {"recordType": "8"}])},
     ):
         await _post(hass, hass_client_no_auth, entry, [_row(8)], **fields)

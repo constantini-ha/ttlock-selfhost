@@ -30,6 +30,7 @@ from .device_description_store import async_get_device_description_store
 from .gateway import TtlockBleGateway
 from .panel import async_setup_panel
 from .passcode_ledger import TtlockBlePasscodeLedger
+from .record_echo import TtlockBleRecordEcho
 from .record_store import async_get_record_store
 
 if TYPE_CHECKING:
@@ -109,6 +110,7 @@ async def async_setup_entry(
 
     permanent_connection = bool(entry.options.get(CONF_PERMANENT_CONNECTION, False))
     record_store = await async_get_record_store(hass)
+    echo = TtlockBleRecordEcho()
     connections: dict[str, TtlockBleConnection] = {
         key.lockMac: TtlockBleConnection(
             hass,
@@ -117,6 +119,7 @@ async def async_setup_entry(
                 records=record_store.seen(key.lockMac),
                 seeded=record_store.is_seeded(key.lockMac),
                 on_move=partial(record_store.async_remember, key.lockMac),
+                is_news=partial(echo.first, key.lockMac),
             ),
         )
         for key in virtual_keys
@@ -167,7 +170,7 @@ async def async_setup_entry(
     # lock hands out for free the next time it advertises awake. Until
     # then the entities report unknown, which is what is actually known.
     gateway = (
-        TtlockBleGateway(hass, entry, coordinator, virtual_keys)
+        TtlockBleGateway(hass, entry, coordinator, virtual_keys, echo)
         if CONF_GATEWAY in config
         else None
     )

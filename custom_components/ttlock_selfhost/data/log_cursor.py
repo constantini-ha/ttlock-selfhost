@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ttlock_ble import LogEntry
+
 
 @dataclass(frozen=True, slots=True)
 class TtlockBleLogCursor:
@@ -21,9 +23,11 @@ class TtlockBleLogCursor:
     every restart and keeps swallowing its first real record.
 
     `on_move` is called with the full set whenever it grows, so the
-    caller can persist it.
+    caller can persist it. `is_news` says whether a record was not
+    already told by the other route.
     """
 
     records: set[int] = field(default_factory=set)
     seeded: bool = False
     on_move: Callable[[set[int]], None] | None = None
+    is_news: Callable[[LogEntry], bool] | None = None
