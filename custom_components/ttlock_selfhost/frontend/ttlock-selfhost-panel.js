@@ -149,6 +149,28 @@ const STYLE = `
     width: 100%; box-sizing: border-box; }
   button.row:hover, button.row:focus-visible { background: var(--tt-blue-soft); }
   .mono { font-family: ui-monospace, "Roboto Mono", monospace; letter-spacing: 1px; }
+  .ghost { all: unset; cursor: pointer; color: var(--tt-blue); padding: 8px; border-radius: 8px;
+    display: inline-grid; place-items: center; font-size: 14px; }
+  .ghost:hover, .ghost:focus-visible { background: var(--tt-blue-soft); }
+  .ghost.danger { color: var(--error-color, #d93025); }
+  .note { color: var(--secondary-text-color); font-size: 13px; line-height: 1.45; margin: 0 4px 14px; }
+  .day { color: var(--secondary-text-color); font-size: 13px; margin: 14px 4px 6px; }
+  .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px;
+    background: var(--card-background-color, #fff); padding: 4px; border-radius: 10px; margin-bottom: 16px; }
+  .tabs button { all: unset; cursor: pointer; text-align: center; padding: 9px 2px; border-radius: 8px;
+    font-size: 13px; }
+  .tabs button[aria-selected="true"] { background: var(--tt-blue); color: #fff; }
+  .tabs button:disabled { opacity: 0.4; cursor: default; }
+  label.field { display: block; padding: 10px 16px; border-bottom: 1px solid var(--tt-line); }
+  label.field span { display: block; font-size: 12px; color: var(--secondary-text-color); margin-bottom: 4px; }
+  label.field input, label.field select { width: 100%; border: 0; outline: 0; background: transparent;
+    color: inherit; font: inherit; font-size: 16px; padding: 4px 0; color-scheme: light dark; }
+  label.check { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+  .primary { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
+    text-align: center; background: var(--tt-blue); color: #fff; border-radius: 26px;
+    padding: 14px; font-size: 16px; font-weight: 500; }
+  .primary:disabled { opacity: 0.5; cursor: default; }
+  .primary:focus-visible { outline: 3px solid var(--tt-blue); outline-offset: 3px; }
   .secondary { all: unset; cursor: pointer; display: block; width: 100%; box-sizing: border-box;
     text-align: center; color: var(--error-color, #d93025); padding: 14px; font-size: 15px; }
   .url { padding: 12px 16px; font-size: 12px; letter-spacing: 0; overflow-wrap: anywhere;
@@ -231,7 +253,7 @@ class TtlockSelfhostPanel extends HTMLElement {
       this._locks = this._locks || [];
     }
     if (!this._mac && this._locks.length === 1) this._mac = this._locks[0].mac;
-    if (["home", "list", "gateway", "settings"].includes(this._view) && !this._editing()) {
+    if (["home", "list", "gateway", "settings", "callback"].includes(this._view) && !this._editing()) {
       this._render();
     }
   }
@@ -393,14 +415,27 @@ class TtlockSelfhostPanel extends HTMLElement {
       ekeys: () => this._ekeys(lock),
       records: () => this._records(),
       gateway: () => this._gateway(lock),
+      callback: () => this._callback(lock.gateway.callback),
       settings: () => this._settings(lock),
     }[view]();
     const single = (this._locks || []).length <= 1;
     const top = view === "list" || (view === "home" && single);
     const title =
-      view === "list" ? this._t("locks") : view === "home" ? lock.name : this._t(view);
+      view === "list"
+        ? this._t("locks")
+        : view === "home"
+          ? lock.name
+          : this._t(view === "callback" ? "callback_title" : view);
     const back = () =>
-      this._go(view === "home" ? "list" : view === "new_passcode" ? "passcodes" : "home");
+      this._go(
+        view === "home"
+          ? "list"
+          : view === "new_passcode"
+            ? "passcodes"
+            : view === "callback"
+              ? this._callbackFrom || "list"
+              : "home"
+      );
     const menu = h("ha-menu-button");
     menu.hass = this._hass;
     menu.narrow = this._narrow;
@@ -464,7 +499,46 @@ class TtlockSelfhostPanel extends HTMLElement {
         )
       )
       ),
+      // The callback belongs to the account, so it is offered once per entry.
+      ...this._locks
+        .filter(
+          (lock, at, all) =>
+            lock.gateway.callback && all.findIndex((other) => other.entry_id === lock.entry_id) === at
+        )
+        .map((lock) => this._callbackRow(lock, "list")),
     ];
+  }
+
+  _callbackRow(lock, from) {
+    const cb = lock.gateway.callback;
+    return h(
+      "div",
+      { class: "card" },
+      h(
+        "button",
+        {
+          class: "row",
+          onclick: () => {
+            this._callbackFrom = from;
+            this._go("callback", lock.mac);
+          },
+        },
+        icon(cb.received_at ? "mdi:bell-check-outline" : "mdi:bell-sleep-outline"),
+        h(
+          "span",
+          { class: "main" },
+          h("b", {}, this._t("callback_title")),
+          h(
+            "small",
+            {},
+            cb.received_at
+              ? this._t("callback_last", { when: this._when(cb.received_at) })
+              : this._t("callback_off")
+          )
+        ),
+        icon("mdi:chevron-right")
+      )
+    );
   }
 
   _status(lock) {
@@ -914,7 +988,6 @@ class TtlockSelfhostPanel extends HTMLElement {
     if (!cb) return [];
     const url = cb.url || location.origin + cb.path;
     return [
-      h("div", { class: "day" }, this._t("callback_title")),
       h(
         "div",
         { class: "card" },
@@ -989,7 +1062,7 @@ class TtlockSelfhostPanel extends HTMLElement {
             )
           : null,
         gw.error ? h("p", { class: "note" }, this._t("cloud_error", { err: gw.error })) : null,
-        ...this._callback(gw.callback),
+        gw.callback ? this._callbackRow(lock, "gateway") : null,
         h("p", { class: "note" }, this._t("gw_intro")),
         h("button", { class: "secondary", onclick: () => this._disconnect(lock) }, this._t("disconnect")),
       ];
